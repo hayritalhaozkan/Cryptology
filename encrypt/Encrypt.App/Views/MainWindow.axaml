@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Encrypt.App.Views.MainWindow"
+        Width="540" Height="560"
+        Title="Encrypt - Şifreleme">
+  <StackPanel Margin="16" Spacing="10">
+
+    <TextBlock x:Name="AlgoTitle" FontSize="18" />
+
+    <TextBlock Text="Metin:"/>
+    <TextBox x:Name="PlainTextBox"
+             AcceptsReturn="True"
+             Height="140"
+             Watermark="Şifrelenecek metni gir..." />
+
+    <TextBlock Text="Anahtar:"/>
+    <TextBox x:Name="KeyBox"
+             Watermark="Örn: 3" />
+
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <Button x:Name="EncryptBtn" Content="Şifrele" Width="120" Height="36"/>
+      <Button x:Name="ClearBtn" Content="Temizle" Width="120" Height="36"/>
+      <Button x:Name="CopyBtn" Content="Kopyala" Width="120" Height="36"/>
+    </StackPanel>
+
+    <TextBlock Text="Şifreli Metin:"/>
+    <TextBox x:Name="CipherTextBox"
+             AcceptsReturn="True"
+             Height="140"
+             IsReadOnly="True"
+             Watermark="Sonuç burada..." />
+
+    <TextBlock x:Name="StatusText"/>
+
+  </StackPanel>
+</Window>
