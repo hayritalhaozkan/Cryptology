@@ -1,36 +1,116 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Encrypt.App.Views.MainWindow"
-        Width="540" Height="560"
-        Title="Encrypt - Şifreleme">
-  <StackPanel Margin="16" Spacing="10">
+        Width="640" Height="780"
+        Title="🔐 Encrypt - Şifreleme Uygulaması"
+        CanResize="True"
+        MinWidth="560" MinHeight="700">
 
-    <TextBlock x:Name="AlgoTitle" FontSize="18" />
+  <Window.Styles>
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontSize" Value="20"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,6,0,2"/>
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#0078D4"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Height" Value="36"/>
+      <Setter Property="Padding" Value="16,0"/>
+    </Style>
+    <Style Selector="Button.secondary">
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Height" Value="36"/>
+      <Setter Property="Padding" Value="16,0"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="CornerRadius" Value="6"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="CornerRadius" Value="6"/>
+    </Style>
+  </Window.Styles>
 
-    <TextBlock Text="Metin:"/>
-    <TextBox x:Name="PlainTextBox"
-             AcceptsReturn="True"
-             Height="140"
-             Watermark="Şifrelenecek metni gir..." />
+  <ScrollViewer>
+    <StackPanel Margin="20" Spacing="6">
 
-    <TextBlock Text="Anahtar:"/>
-    <TextBox x:Name="KeyBox"
-             Watermark="Örn: 3" />
+      <!-- Başlık -->
+      <TextBlock Classes="header" Text="🔐 Şifreleme"/>
+      <Separator Margin="0,0,0,4"/>
 
-    <StackPanel Orientation="Horizontal" Spacing="10">
-      <Button x:Name="EncryptBtn" Content="Şifrele" Width="120" Height="36"/>
-      <Button x:Name="ClearBtn" Content="Temizle" Width="120" Height="36"/>
-      <Button x:Name="CopyBtn" Content="Kopyala" Width="120" Height="36"/>
+      <!-- Yöntem Seçimi -->
+      <TextBlock Classes="label" Text="Şifreleme Yöntemi:"/>
+      <ComboBox x:Name="MethodCombo" HorizontalAlignment="Stretch"/>
+
+      <!-- Yöntem İpucu -->
+      <TextBlock x:Name="HintText" FontSize="11" Foreground="Gray"
+                 TextWrapping="Wrap" Margin="0,0,0,2"/>
+
+      <!-- Metin Girişi -->
+      <TextBlock Classes="label" Text="Düz Metin:"/>
+      <TextBox x:Name="PlainTextBox"
+               AcceptsReturn="True"
+               Height="100"
+               TextWrapping="Wrap"
+               Watermark="Şifrelenecek metni girin..."/>
+
+      <!-- Dinamik Anahtar Alanları -->
+      <TextBlock Classes="label" Text="Anahtar Bilgileri:"/>
+      <StackPanel x:Name="KeyFieldsPanel" Spacing="4"/>
+
+      <!-- Butonlar -->
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+        <Button x:Name="EncryptBtn" Content="🔒 Şifrele" Classes="primary"/>
+        <Button x:Name="CopyBtn" Content="📋 Kopyala" Classes="secondary"/>
+        <Button x:Name="ClearBtn" Content="🗑 Temizle" Classes="secondary"/>
+      </StackPanel>
+
+      <!-- Şifreli Metin Çıktısı -->
+      <TextBlock Classes="label" Text="Şifreli Metin:"/>
+      <TextBox x:Name="CipherTextBox"
+               AcceptsReturn="True"
+               Height="100"
+               IsReadOnly="True"
+               TextWrapping="Wrap"
+               Watermark="Sonuç burada görünecek..."/>
+
+      <!-- Durum -->
+      <TextBlock x:Name="StatusText" FontSize="12" Foreground="#0078D4"
+                 TextWrapping="Wrap" Margin="0,2,0,0"/>
+
+      <Separator Margin="0,8,0,4"/>
+
+      <!-- E-Posta Gönderme -->
+      <TextBlock Classes="header" Text="📧 E-Posta Gönder"/>
+
+      <TextBlock Classes="label" Text="Gönderen E-posta:"/>
+      <TextBox x:Name="SenderEmailBox" Watermark="ornek@gmail.com"/>
+
+      <TextBlock Classes="label" Text="Gönderen Şifre (App Password):"/>
+      <TextBox x:Name="SenderPasswordBox" PasswordChar="●" Watermark="Uygulama şifresi"/>
+
+      <TextBlock Classes="label" Text="SMTP Sunucu:"/>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox x:Name="SmtpHostBox" Watermark="smtp.gmail.com" Width="300" Text="smtp.gmail.com"/>
+        <TextBox x:Name="SmtpPortBox" Watermark="587" Width="80" Text="587"/>
+      </StackPanel>
+
+      <TextBlock Classes="label" Text="Alıcı E-posta:"/>
+      <TextBox x:Name="RecipientEmailBox" Watermark="alici@gmail.com"/>
+
+      <Button x:Name="SendMailBtn" Content="📤 Şifreli Metni Gönder" Classes="primary"
+              Margin="0,8,0,0"/>
+
+      <TextBlock x:Name="MailStatusText" FontSize="12" Foreground="Green"
+                 TextWrapping="Wrap" Margin="0,2,0,12"/>
+
     </StackPanel>
-
-    <TextBlock Text="Şifreli Metin:"/>
-    <TextBox x:Name="CipherTextBox"
-             AcceptsReturn="True"
-             Height="140"
-             IsReadOnly="True"
-             Watermark="Sonuç burada..." />
-
-    <TextBlock x:Name="StatusText"/>
-
-  </StackPanel>
+  </ScrollViewer>
 </Window>

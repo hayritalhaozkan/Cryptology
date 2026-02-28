@@ -1,37 +1,36 @@
 using System;
+using System.Text;
+using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
+/// <summary>
+/// Kaydırmalı Şifre Çözme (Caesar Decipher).
+/// D(y) = (y - k) mod 29
+/// </summary>
 public sealed class CaesarDecipher : IDecipher
 {
-    public string Name => "Caesar";
+    public string Name => "Kaydırmalı (Caesar)";
+    public string KeyHint => "Kaydırma sayısı girin (ör: 3)";
+    public string[] KeyLabels => new[] { "Kaydırma (k)" };
 
-    public string Decrypt(string cipherText, string key)
+    public string Decrypt(string cipherText, string[] keys)
     {
-        if (!int.TryParse(key, out var shift))
-            throw new ArgumentException("Anahtar sayı olmalı. Örn: 3");
+        if (keys.Length < 1 || !int.TryParse(keys[0], out int shift))
+            throw new ArgumentException("Anahtar bir tamsayı olmalı. Örn: 3");
 
-        return Shift(cipherText ?? "", -shift);
-    }
+        var normalized = TextNormalizer.Normalize(cipherText);
+        var sb = new StringBuilder(normalized.Length);
 
-    private static string Shift(string input, int shift)
-    {
-        shift %= 26;
-
-        char ShiftChar(char c, char baseChar)
+        foreach (char c in normalized)
         {
-            int offset = c - baseChar;
-            int shifted = (offset + shift + 26) % 26;
-            return (char)(baseChar + shifted);
+            int idx = TurkishAlphabet.IndexOf(c);
+            if (idx >= 0)
+                sb.Append(TurkishAlphabet.CharAt(idx - shift));
+            else
+                sb.Append(c);
         }
 
-        var chars = input.ToCharArray();
-        for (int i = 0; i < chars.Length; i++)
-        {
-            char c = chars[i];
-            if (c >= 'a' && c <= 'z') chars[i] = ShiftChar(c, 'a');
-            else if (c >= 'A' && c <= 'Z') chars[i] = ShiftChar(c, 'A');
-        }
-        return new string(chars);
+        return sb.ToString();
     }
 }
