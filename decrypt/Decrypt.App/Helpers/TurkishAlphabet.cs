@@ -3,20 +3,33 @@ using System.Collections.Generic;
 
 namespace Decrypt.App.Helpers;
 
+// ============================================================================
+// TURK ALFABESI YARDIMCI SINIFI (DECRYPT TARAFI)
+// ============================================================================
+// Encrypt tarafindaki TurkishAlphabet sinifinin aynisi.
+// Decrypt projesinde ayri bir proje oldugu icin burada da tanimlanmasi gerekiyor.
+//
+// Bu sinif turk alfabesiyle ilgili tum islemleri yapar:
+// - Harf -> index cevirimi (ornegin 'A' -> 0, 'Ç' -> 3)
+// - Index -> harf cevirimi (ornegin 0 -> 'A', 3 -> 'Ç')
+// - Moduler ters hesaplama (Affine cozme icin)
+// - EBOB (GCD) hesaplama
+// ============================================================================
 public static class TurkishAlphabet
 {
-    // turk alfabesindeki harf sayisi
+    // turk alfabesindeki toplam harf sayisi
     public const int N = 29;
 
-    // turk alfabesi harfleri - buyuk harf
+    // turk alfabesinin tum harfleri sirali sekilde
     public static readonly string Harfler = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    // eski kodla uyumluluk icin
+    // eski kodlarla uyumluluk icin
     public static readonly string Letters = Harfler;
 
-    // her harfin indexini tutan sozluk
+    // harf -> index eslemesi icin sozluk
     private static readonly Dictionary<char, int> harfIndex;
 
+    // sinif ilk kullanildiginda calisir, sozlugu doldurur
     static TurkishAlphabet()
     {
         harfIndex = new Dictionary<char, int>(N);
@@ -24,7 +37,7 @@ public static class TurkishAlphabet
             harfIndex[Harfler[i]] = i;
     }
 
-    // harfin indexini bul, yoksa -1 dondur
+    // harfin alfabedeki indexini dondurur, yoksa -1
     public static int IndexOf(char c)
     {
         if (harfIndex.ContainsKey(c))
@@ -32,7 +45,7 @@ public static class TurkishAlphabet
         return -1;
     }
 
-    // indexten harfi bul (mod N ile)
+    // indexten harfi bulur (mod 29 dairesel)
     public static char CharAt(int index)
     {
         int sonuc = ((index % N) + N) % N;
@@ -45,7 +58,8 @@ public static class TurkishAlphabet
         return harfIndex.ContainsKey(c);
     }
 
-    // moduler ters bulma - affine icin lazim
+    // moduler ters bulma - affine sifre cozme icin lazim
+    // a * x = 1 (mod m) saglayan x'i bulur
     public static int ModInverse(int a, int m)
     {
         a = ((a % m) + m) % m;
@@ -54,10 +68,10 @@ public static class TurkishAlphabet
             if ((a * x) % m == 1)
                 return x;
         }
-        return -1; // bulunamadi
+        return -1;
     }
 
-    // en buyuk ortak bolen
+    // en buyuk ortak bolen (EBOB) - Euclidean algoritmasi
     public static int Gcd(int a, int b)
     {
         a = Math.Abs(a);
