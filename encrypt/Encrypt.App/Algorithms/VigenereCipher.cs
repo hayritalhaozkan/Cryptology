@@ -1,65 +1,50 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Sayı Anahtarlı Şifre (Vigenère benzeri sayısal anahtar).
-/// Anahtar: virgülle ayrılmış tamsayı dizisi. Örn: "3,7,1,15,22"
-/// Her sayı ilgili pozisyondaki harfe "kaydırma" olarak eklenir (mod 29).
-/// Anahtar, metin boyunca tekrar eder (cyclic).
-/// 
-/// E(xᵢ) = (xᵢ + kᵢ mod len) mod 29
-/// </summary>
+// sayi anahtarli sifre (vigenere)
+// her harf anahtardaki sayiya gore kaydrilir
 public sealed class VigenereCipher : ICipher
 {
-    public string Name => "Sayı Anahtarlı (Vigenère)";
-    public string KeyHint => "Virgülle ayrılmış sayılar girin.\nÖrn: 3,7,1,15,22";
-    public string[] KeyLabels => new[] { "Sayısal Anahtar" };
+    public string Name => "Sayi Anahtarli (Vigenere)";
+    public string KeyHint => "Virgul ile ayrilmis sayilar girin.\nOrn: 3,7,1,15,22";
+    public string[] KeyLabels => new[] { "Sayisal Anahtar" };
 
-    public string Encrypt(string plainText, string[] keys)
+    public string Encrypt(string duzMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || string.IsNullOrWhiteSpace(keys[0]))
-            throw new ArgumentException("Sayısal anahtar gerekli. Örn: 3,7,1,15,22");
-
-        var keyNums = ParseKey(keys[0]);
-        if (keyNums.Count == 0)
-            throw new ArgumentException("En az bir anahtar sayısı gerekli.");
-
-        var normalized = TextNormalizer.Normalize(plainText);
-        var sb = new StringBuilder(normalized.Length);
-
-        int ki = 0;
-        foreach (char c in normalized)
+        // anahtari parcala
+        string[] parcalar = anahtarlar[0].Split(',');
+        var anahtarSayilari = new List<int>();
+        for (int i = 0; i < parcalar.Length; i++)
         {
-            int x = TurkishAlphabet.IndexOf(c);
+            string parca = parcalar[i].Trim();
+            if (parca.Length > 0)
+                anahtarSayilari.Add(int.Parse(parca));
+        }
+
+        string normalMetin = TextNormalizer.Normalize(duzMetin);
+
+        var sonuc = new StringBuilder();
+        int anahtarIndex = 0;
+
+        for (int i = 0; i < normalMetin.Length; i++)
+        {
+            char harf = normalMetin[i];
+            int x = TurkishAlphabet.IndexOf(harf);
             if (x >= 0)
             {
-                int shift = keyNums[ki % keyNums.Count];
-                sb.Append(TurkishAlphabet.CharAt(x + shift));
-                ki++;
+                int kaydirma = anahtarSayilari[anahtarIndex % anahtarSayilari.Count];
+                sonuc.Append(TurkishAlphabet.CharAt(x + kaydirma));
+                anahtarIndex++;
             }
             else
             {
-                sb.Append(c);
+                sonuc.Append(harf);
             }
         }
 
-        return sb.ToString();
-    }
-
-    private static List<int> ParseKey(string raw)
-    {
-        var result = new List<int>();
-        var parts = raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        foreach (var p in parts)
-        {
-            if (!int.TryParse(p, out int val))
-                throw new ArgumentException($"'{p}' geçerli bir sayı değil.");
-            result.Add(val);
-        }
-        return result;
+        return sonuc.ToString();
     }
 }

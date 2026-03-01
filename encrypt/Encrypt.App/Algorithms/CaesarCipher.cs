@@ -1,37 +1,42 @@
-using System;
 using System.Text;
 using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Kaydırmalı Şifre (Caesar Cipher) — Türk alfabesi (mod 29).
-/// E(x) = (x + k) mod 29
-/// Anahtar: tek bir tamsayı (kaydırma miktarı).
-/// </summary>
+// kaydirmali sifre (caesar)
+// E(x) = (x + k) mod 29
 public sealed class CaesarCipher : ICipher
 {
-    public string Name => "Kaydırmalı (Caesar)";
-    public string KeyHint => "Kaydırma sayısı girin (ör: 3)";
-    public string[] KeyLabels => new[] { "Kaydırma (k)" };
+    public string Name => "Kaydirmali (Caesar)";
+    public string KeyHint => "Kaydirma sayisi girin (orn: 3)";
+    public string[] KeyLabels => new[] { "Kaydirma (k)" };
 
-    public string Encrypt(string plainText, string[] keys)
+    public string Encrypt(string duzMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || !int.TryParse(keys[0], out int shift))
-            throw new ArgumentException("Anahtar bir tamsayı olmalı. Örn: 3");
+        // anahtari al
+        int kaydirma = int.Parse(anahtarlar[0]);
 
-        var normalized = TextNormalizer.Normalize(plainText);
-        var sb = new StringBuilder(normalized.Length);
+        // metni normalize et
+        string normalMetin = TextNormalizer.Normalize(duzMetin);
 
-        foreach (char c in normalized)
+        // her harfi kaydir
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            int idx = TurkishAlphabet.IndexOf(c);
-            if (idx >= 0)
-                sb.Append(TurkishAlphabet.CharAt(idx + shift));
+            char harf = normalMetin[i];
+            int index = TurkishAlphabet.IndexOf(harf);
+            if (index >= 0)
+            {
+                // harfi kaydir
+                char yeniHarf = TurkishAlphabet.CharAt(index + kaydirma);
+                sonuc.Append(yeniHarf);
+            }
             else
-                sb.Append(c);
+            {
+                sonuc.Append(harf);
+            }
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

@@ -3,43 +3,49 @@ using System.Collections.Generic;
 
 namespace Encrypt.App.Helpers;
 
-/// <summary>
-/// Türk alfabesi (29 harf) ile index işlemleri.
-/// Alfabe: A B C Ç D E F G Ğ H I İ J K L M N O Ö P R S Ş T U Ü V Y Z
-/// N = 29
-/// </summary>
 public static class TurkishAlphabet
 {
+    // turk alfabesindeki harf sayisi
     public const int N = 29;
 
-    // Türk alfabesi — 29 büyük harf (Q, W, X yok)
-    public static readonly string Letters = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
+    // turk alfabesi harfleri - buyuk harf
+    public static readonly string Harfler = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    private static readonly Dictionary<char, int> _charToIndex;
+    // eski kodla uyumluluk icin
+    public static readonly string Letters = Harfler;
+
+    // her harfin indexini tutan sozluk
+    private static readonly Dictionary<char, int> harfIndex;
 
     static TurkishAlphabet()
     {
-        _charToIndex = new Dictionary<char, int>(N);
-        for (int i = 0; i < Letters.Length; i++)
-            _charToIndex[Letters[i]] = i;
+        harfIndex = new Dictionary<char, int>(N);
+        for (int i = 0; i < Harfler.Length; i++)
+            harfIndex[Harfler[i]] = i;
     }
 
-    /// <summary>Harfin Türk-alfabe indeksini döndürür. Geçersizse -1.</summary>
-    public static int IndexOf(char c) =>
-        _charToIndex.TryGetValue(c, out var idx) ? idx : -1;
+    // harfin indexini bul, yoksa -1 dondur
+    public static int IndexOf(char c)
+    {
+        if (harfIndex.ContainsKey(c))
+            return harfIndex[c];
+        return -1;
+    }
 
-    /// <summary>İndeksten (mod N) harfi döndürür.</summary>
-    public static char CharAt(int index) =>
-        Letters[((index % N) + N) % N];
+    // indexten harfi bul (mod N ile)
+    public static char CharAt(int index)
+    {
+        int sonuc = ((index % N) + N) % N;
+        return Harfler[sonuc];
+    }
 
-    /// <summary>Karakter Türk alfabesinde mi?</summary>
-    public static bool Contains(char c) =>
-        _charToIndex.ContainsKey(c);
+    // harf alfabede var mi
+    public static bool Contains(char c)
+    {
+        return harfIndex.ContainsKey(c);
+    }
 
-    /// <summary>
-    /// Modüler ters (extended Euclidean). Affine için gerekli.
-    /// a * modInverse(a, N) ≡ 1 (mod N)
-    /// </summary>
+    // moduler ters bulma - affine icin lazim
     public static int ModInverse(int a, int m)
     {
         a = ((a % m) + m) % m;
@@ -48,17 +54,19 @@ public static class TurkishAlphabet
             if ((a * x) % m == 1)
                 return x;
         }
-        throw new ArgumentException($"'{a}' sayısının mod {m} tersi yok. gcd({a},{m}) ≠ 1.");
+        return -1; // bulunamadi
     }
 
-    /// <summary>gcd hesaplar.</summary>
+    // en buyuk ortak bolen
     public static int Gcd(int a, int b)
     {
         a = Math.Abs(a);
         b = Math.Abs(b);
         while (b != 0)
         {
-            (a, b) = (b, a % b);
+            int gecici = b;
+            b = a % b;
+            a = gecici;
         }
         return a;
     }

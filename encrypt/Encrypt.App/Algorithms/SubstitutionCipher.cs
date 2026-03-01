@@ -1,60 +1,39 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Yer Değiştirme Şifresi (Monoalphabetic Substitution Cipher).
-/// Anahtar: 29 harflik permütlenmiş (karışık) Türk alfabesi.
-/// Örn: "ÜYZABCÇDEFGĞHIİJKLMNOÖPRSŞTUV"
-/// Düz alfabe:   A B C Ç D E F G Ğ H I İ J K L M N O Ö P R S Ş T U Ü V Y Z
-/// Anahtar alf.: Ü Y Z A B C Ç D E F G Ğ H I İ J K L M N O Ö P R S Ş T U V
-/// </summary>
+// yer degistirme sifresi (substitution)
+// her harf anahtar alfabedeki karsiligina donusur
 public sealed class SubstitutionCipher : ICipher
 {
-    public string Name => "Yer Değiştirme (Substitution)";
-    public string KeyHint => "29 harflik karışık alfabe girin.\nÖrn: ÜYZABCÇDEFGĞHIİJKLMNOÖPRSŞTUV";
+    public string Name => "Yer Degistirme (Substitution)";
+    public string KeyHint => "29 harflik karisik alfabe girin.\nOrn: ÜYZABCÇDEFGĞHIIJKLMNOÖPRSŞTÜV";
     public string[] KeyLabels => new[] { "Anahtar Alfabesi (29 harf)" };
 
-    public string Encrypt(string plainText, string[] keys)
+    public string Encrypt(string duzMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || string.IsNullOrWhiteSpace(keys[0]))
-            throw new ArgumentException("29 harflik anahtar alfabesi gerekli.");
+        // anahtar alfabeyi normalize et
+        string anahtarAlfabe = TextNormalizer.Normalize(anahtarlar[0]);
 
-        var keyAlphabet = TextNormalizer.Normalize(keys[0]);
+        string normalMetin = TextNormalizer.Normalize(duzMetin);
 
-        if (keyAlphabet.Length != TurkishAlphabet.N)
-            throw new ArgumentException(
-                $"Anahtar alfabe tam {TurkishAlphabet.N} harf olmalı. Girdiğiniz: {keyAlphabet.Length} harf.");
-
-        // Tekrar kontrolü
-        var unique = new HashSet<char>(keyAlphabet);
-        if (unique.Count != TurkishAlphabet.N)
-            throw new ArgumentException("Anahtar alfabede tekrar eden harfler var veya eksik harf var.");
-
-        // Tüm harfler Türk alfabesinde mi?
-        foreach (char c in keyAlphabet)
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            if (!TurkishAlphabet.Contains(c))
-                throw new ArgumentException($"'{c}' Türk alfabesinde yok.");
-        }
-
-        // Mapping: düz alfabe index → anahtar alfabe harfi
-        var normalized = TextNormalizer.Normalize(plainText);
-        var sb = new StringBuilder(normalized.Length);
-
-        foreach (char c in normalized)
-        {
-            int idx = TurkishAlphabet.IndexOf(c);
-            if (idx >= 0)
-                sb.Append(keyAlphabet[idx]);
+            char harf = normalMetin[i];
+            int index = TurkishAlphabet.IndexOf(harf);
+            if (index >= 0)
+            {
+                // duz alfabedeki indexe karsilik gelen anahtar harfi al
+                sonuc.Append(anahtarAlfabe[index]);
+            }
             else
-                sb.Append(c);
+            {
+                sonuc.Append(harf);
+            }
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

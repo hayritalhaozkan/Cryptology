@@ -1,71 +1,68 @@
-using System;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Zigzag Çözme (Rail Fence Decipher).
-/// Şifreli metin satır satır okunmuştu → ters işlem: her ray'e düşen harf sayısını hesapla,
-/// şifreli metinden o kadar harfi al, zigzag düzeninde geri yerleştir.
-/// </summary>
+// zigzag sifre cozme (rail fence decipher)
+// sifreli metin raylara dagilir, sonra zigzag sirasinda okunur
 public sealed class ZigzagDecipher : IDecipher
 {
     public string Name => "Zigzag (Rail Fence)";
-    public string KeyHint => "Ray sayısı girin. Örn: 3";
-    public string[] KeyLabels => new[] { "Ray Sayısı" };
+    public string KeyHint => "Ray sayisi girin. Orn: 3";
+    public string[] KeyLabels => new[] { "Ray Sayisi" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || !int.TryParse(keys[0], out int rails))
-            throw new ArgumentException("Ray sayısı tamsayı olmalı. Örn: 3");
+        int raySayisi = int.Parse(anahtarlar[0]);
 
-        if (rails <= 0)
-            throw new ArgumentException("Ray sayısı pozitif olmalı.");
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
+        int uzunluk = normalMetin.Length;
 
-        var normalized = TextNormalizer.Normalize(cipherText);
-        int len = normalized.Length;
+        if (uzunluk == 0)
+            return "";
 
-        if (len == 0) return string.Empty;
-        if (rails == 1 || rails >= len) return normalized;
+        if (raySayisi == 1 || raySayisi >= uzunluk)
+            return normalMetin;
 
-        // Her ray'deki harf sayısını hesapla
-        var rowLengths = new int[rails];
-        int rail = 0;
-        bool down = true;
-        for (int i = 0; i < len; i++)
+        // her raydeki harf sayisini hesapla
+        int[] rayUzunluklari = new int[raySayisi];
+        int ray = 0;
+        bool asagi = true;
+        for (int i = 0; i < uzunluk; i++)
         {
-            rowLengths[rail]++;
-            if (rail == 0) down = true;
-            else if (rail == rails - 1) down = false;
-            rail += down ? 1 : -1;
+            rayUzunluklari[ray]++;
+            if (ray == 0) asagi = true;
+            else if (ray == raySayisi - 1) asagi = false;
+            if (asagi) ray++;
+            else ray--;
         }
 
-        // Şifreli metni raylara dağıt
-        var rows = new string[rails];
-        int pos = 0;
-        for (int r = 0; r < rails; r++)
+        // sifreli metni raylara dagit
+        string[] satirlar = new string[raySayisi];
+        int pozisyon = 0;
+        for (int r = 0; r < raySayisi; r++)
         {
-            rows[r] = normalized.Substring(pos, rowLengths[r]);
-            pos += rowLengths[r];
+            satirlar[r] = normalMetin.Substring(pozisyon, rayUzunluklari[r]);
+            pozisyon += rayUzunluklari[r];
         }
 
-        // Zigzag sırasında okuyarak orijinal metni oluştur
-        var indices = new int[rails]; // her ray'in mevcut indeksi
-        var sb = new StringBuilder(len);
+        // zigzag sirasinda okuyarak orijinal metni olustur
+        int[] rayIndexleri = new int[raySayisi];
+        var sonuc = new StringBuilder();
 
-        rail = 0;
-        down = true;
-        for (int i = 0; i < len; i++)
+        ray = 0;
+        asagi = true;
+        for (int i = 0; i < uzunluk; i++)
         {
-            sb.Append(rows[rail][indices[rail]]);
-            indices[rail]++;
+            sonuc.Append(satirlar[ray][rayIndexleri[ray]]);
+            rayIndexleri[ray]++;
 
-            if (rail == 0) down = true;
-            else if (rail == rails - 1) down = false;
-            rail += down ? 1 : -1;
+            if (ray == 0) asagi = true;
+            else if (ray == raySayisi - 1) asagi = false;
+            if (asagi) ray++;
+            else ray--;
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

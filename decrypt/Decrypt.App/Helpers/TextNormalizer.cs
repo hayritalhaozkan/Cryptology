@@ -3,27 +3,29 @@ using System.Text;
 
 namespace Decrypt.App.Helpers;
 
-/// <summary>
-/// Metni normalize eder (Decrypt tarafında da ihtiyaç olabilir).
-/// </summary>
 public static class TextNormalizer
 {
-    private static readonly CultureInfo _trCulture = new("tr-TR");
+    // turk kulturu
+    private static readonly CultureInfo trKultur = new("tr-TR");
 
-    public static string Normalize(string input)
+    // metni normalize et: buyuk harfe cevir, sadece turk alfabesindeki harfleri birak
+    public static string Normalize(string girdi)
     {
-        if (string.IsNullOrEmpty(input))
-            return string.Empty;
+        if (string.IsNullOrEmpty(girdi))
+            return "";
 
-        var upper = input.ToUpper(_trCulture);
+        // buyuk harfe cevir
+        string buyukHarf = girdi.ToUpper(trKultur);
 
-        var sb = new StringBuilder(upper.Length);
-        foreach (char c in upper)
+        // sadece turk alfabesindeki harfleri al
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < buyukHarf.Length; i++)
         {
+            char c = buyukHarf[i];
             if (TurkishAlphabet.Contains(c))
-                sb.Append(c);
+                sonuc.Append(c);
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

@@ -1,36 +1,41 @@
-using System;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Kaydırmalı Şifre Çözme (Caesar Decipher).
-/// D(y) = (y - k) mod 29
-/// </summary>
+// kaydirmali sifre cozme (caesar)
+// D(y) = (y - k) mod 29
 public sealed class CaesarDecipher : IDecipher
 {
-    public string Name => "Kaydırmalı (Caesar)";
-    public string KeyHint => "Kaydırma sayısı girin (ör: 3)";
-    public string[] KeyLabels => new[] { "Kaydırma (k)" };
+    public string Name => "Kaydirmali (Caesar)";
+    public string KeyHint => "Kaydirma sayisi girin (orn: 3)";
+    public string[] KeyLabels => new[] { "Kaydirma (k)" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || !int.TryParse(keys[0], out int shift))
-            throw new ArgumentException("Anahtar bir tamsayı olmalı. Örn: 3");
+        // anahtari al
+        int kaydirma = int.Parse(anahtarlar[0]);
 
-        var normalized = TextNormalizer.Normalize(cipherText);
-        var sb = new StringBuilder(normalized.Length);
+        // metni normalize et
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
 
-        foreach (char c in normalized)
+        // her harfi geri kaydir
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            int idx = TurkishAlphabet.IndexOf(c);
-            if (idx >= 0)
-                sb.Append(TurkishAlphabet.CharAt(idx - shift));
+            char harf = normalMetin[i];
+            int index = TurkishAlphabet.IndexOf(harf);
+            if (index >= 0)
+            {
+                char yeniHarf = TurkishAlphabet.CharAt(index - kaydirma);
+                sonuc.Append(yeniHarf);
+            }
             else
-                sb.Append(c);
+            {
+                sonuc.Append(harf);
+            }
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

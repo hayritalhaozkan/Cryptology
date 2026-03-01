@@ -1,12 +1,17 @@
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Tüm çözme algoritmalarının ortak arayüzü.
-/// </summary>
+// sifre cozme algoritmalarinin ortak arayuzu
 public interface IDecipher
 {
+    // algoritmanin adi
     string Name { get; }
+
+    // anahtar icin ipucu
     string KeyHint { get; }
+
+    // anahtar alanlari
     string[] KeyLabels { get; }
-    string Decrypt(string cipherText, string[] keys);
+
+    // sifre coz
+    string Decrypt(string sifreliMetin, string[] anahtarlar);
 }

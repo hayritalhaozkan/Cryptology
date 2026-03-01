@@ -1,51 +1,44 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Yer Değiştirme Çözme (Substitution Decipher).
-/// Anahtar alfabedeki harfin pozisyonu → düz alfabe harfi.
-/// </summary>
+// yer degistirme sifre cozme (substitution)
+// anahtar alfabedeki harfin pozisyonu duz alfabe harfine donusur
 public sealed class SubstitutionDecipher : IDecipher
 {
-    public string Name => "Yer Değiştirme (Substitution)";
-    public string KeyHint => "29 harflik karışık alfabe girin.\nÖrn: ÜYZABCÇDEFGĞHIİJKLMNOÖPRSŞTUV";
+    public string Name => "Yer Degistirme (Substitution)";
+    public string KeyHint => "29 harflik karisik alfabe girin.\nOrn: ÜYZABCÇDEFGĞHIIJKLMNOÖPRSŞTÜV";
     public string[] KeyLabels => new[] { "Anahtar Alfabesi (29 harf)" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || string.IsNullOrWhiteSpace(keys[0]))
-            throw new ArgumentException("29 harflik anahtar alfabesi gerekli.");
+        // anahtar alfabeyi normalize et
+        string anahtarAlfabe = TextNormalizer.Normalize(anahtarlar[0]);
 
-        var keyAlphabet = TextNormalizer.Normalize(keys[0]);
+        // ters eslesme tablosu olustur
+        var tersEsleme = new Dictionary<char, int>();
+        for (int i = 0; i < anahtarAlfabe.Length; i++)
+            tersEsleme[anahtarAlfabe[i]] = i;
 
-        if (keyAlphabet.Length != TurkishAlphabet.N)
-            throw new ArgumentException(
-                $"Anahtar alfabe tam {TurkishAlphabet.N} harf olmalı. Girdiğiniz: {keyAlphabet.Length} harf.");
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
 
-        var unique = new HashSet<char>(keyAlphabet);
-        if (unique.Count != TurkishAlphabet.N)
-            throw new ArgumentException("Anahtar alfabede tekrar eden veya eksik harfler var.");
-
-        // Ters mapping: anahtar harf → düz alfabe pozisyonu
-        var reverseMap = new Dictionary<char, int>(TurkishAlphabet.N);
-        for (int i = 0; i < keyAlphabet.Length; i++)
-            reverseMap[keyAlphabet[i]] = i;
-
-        var normalized = TextNormalizer.Normalize(cipherText);
-        var sb = new StringBuilder(normalized.Length);
-
-        foreach (char c in normalized)
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            if (reverseMap.TryGetValue(c, out int plainIdx))
-                sb.Append(TurkishAlphabet.Letters[plainIdx]);
+            char harf = normalMetin[i];
+            if (tersEsleme.ContainsKey(harf))
+            {
+                int duzIndex = tersEsleme[harf];
+                sonuc.Append(TurkishAlphabet.Letters[duzIndex]);
+            }
             else
-                sb.Append(c);
+            {
+                sonuc.Append(harf);
+            }
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

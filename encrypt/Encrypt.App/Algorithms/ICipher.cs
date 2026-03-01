@@ -1,19 +1,17 @@
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Tüm şifreleme algoritmalarının ortak arayüzü.
-/// </summary>
+// sifreleme algoritmalarinin ortak arayuzu
 public interface ICipher
 {
-    /// <summary>Algoritma görünen adı (ComboBox'ta görünecek).</summary>
+    // algoritmanin adi
     string Name { get; }
 
-    /// <summary>Anahtar girişi için kullanıcıya gösterilecek ipucu.</summary>
+    // anahtar icin ipucu
     string KeyHint { get; }
 
-    /// <summary>Anahtar alanlarının etiketleri (birden fazla alan olabilir).</summary>
+    // anahtar alanlari
     string[] KeyLabels { get; }
 
-    /// <summary>Metni şifreler. keys dizisi UI'daki anahtar alanlarından gelir.</summary>
-    string Encrypt(string plainText, string[] keys);
+    // sifrele
+    string Encrypt(string duzMetin, string[] anahtarlar);
 }

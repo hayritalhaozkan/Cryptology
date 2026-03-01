@@ -1,49 +1,43 @@
-using System;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Doğrusal Şifre Çözme (Affine Decipher).
-/// D(y) = a⁻¹ * (y - b) mod 29
-/// </summary>
+// dogrusal sifre cozme (affine)
+// D(y) = a^-1 * (y - b) mod 29
 public sealed class AffineDecipher : IDecipher
 {
-    public string Name => "Doğrusal (Affine)";
-    public string KeyHint => "a ve b girin. gcd(a,29)=1 olmalı. Örn: a=2, b=5";
+    public string Name => "Dogrusal (Affine)";
+    public string KeyHint => "a ve b degerlerini girin. Orn: a=2, b=5";
     public string[] KeyLabels => new[] { "a", "b" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 2
-            || !int.TryParse(keys[0], out int a)
-            || !int.TryParse(keys[1], out int b))
-            throw new ArgumentException("İki tamsayı gerekli: a ve b.");
+        int a = int.Parse(anahtarlar[0]);
+        int b = int.Parse(anahtarlar[1]);
 
-        if (TurkishAlphabet.Gcd(a, TurkishAlphabet.N) != 1)
-            throw new ArgumentException(
-                $"a={a} geçersiz. gcd({a}, {TurkishAlphabet.N}) = 1 olmalı.");
+        // a nin tersini bul
+        int aTersi = TurkishAlphabet.ModInverse(a, TurkishAlphabet.N);
 
-        int aInv = TurkishAlphabet.ModInverse(a, TurkishAlphabet.N);
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
 
-        var normalized = TextNormalizer.Normalize(cipherText);
-        var sb = new StringBuilder(normalized.Length);
-
-        foreach (char c in normalized)
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            int y = TurkishAlphabet.IndexOf(c);
+            char harf = normalMetin[i];
+            int y = TurkishAlphabet.IndexOf(harf);
             if (y >= 0)
             {
-                int dec = ((aInv * (y - b)) % TurkishAlphabet.N + TurkishAlphabet.N) % TurkishAlphabet.N;
-                sb.Append(TurkishAlphabet.CharAt(dec));
+                // ters affine formulu
+                int cozulmus = ((aTersi * (y - b)) % TurkishAlphabet.N + TurkishAlphabet.N) % TurkishAlphabet.N;
+                sonuc.Append(TurkishAlphabet.CharAt(cozulmus));
             }
             else
             {
-                sb.Append(c);
+                sonuc.Append(harf);
             }
         }
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

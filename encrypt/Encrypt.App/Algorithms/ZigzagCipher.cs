@@ -1,67 +1,57 @@
-using System;
 using System.Text;
 using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Zigzag Şifresi (Rail Fence Cipher).
-/// Metin zigzag deseninde ray sayısı kadar satıra yazılır, sonra satır satır okunur.
-/// 
-/// Anahtar: ray sayısı (tamsayı). Örn: 3
-/// 
-/// Örnek (3 ray):
-///   H . . . O . . . R
-///   . E . L . W . L . D
-///   . . L . . . O . .
-/// Çıktı: HORELWLDLOO (satır satır)
-/// </summary>
+// zigzag sifresi (rail fence)
+// metin zigzag seklinde raylara yazilir, sonra satir satir okunur
 public sealed class ZigzagCipher : ICipher
 {
     public string Name => "Zigzag (Rail Fence)";
-    public string KeyHint => "Ray sayısı girin. Örn: 3";
-    public string[] KeyLabels => new[] { "Ray Sayısı" };
+    public string KeyHint => "Ray sayisi girin. Orn: 3";
+    public string[] KeyLabels => new[] { "Ray Sayisi" };
 
-    public string Encrypt(string plainText, string[] keys)
+    public string Encrypt(string duzMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || !int.TryParse(keys[0], out int rails))
-            throw new ArgumentException("Ray sayısı tamsayı olmalı. Örn: 3");
+        int raySayisi = int.Parse(anahtarlar[0]);
 
-        if (rails <= 0)
-            throw new ArgumentException("Ray sayısı pozitif olmalı.");
+        string normalMetin = TextNormalizer.Normalize(duzMetin);
 
-        var normalized = TextNormalizer.Normalize(plainText);
+        if (normalMetin.Length == 0)
+            return "";
 
-        if (normalized.Length == 0)
-            return string.Empty;
+        if (raySayisi == 1 || raySayisi >= normalMetin.Length)
+            return normalMetin;
 
-        if (rails == 1 || rails >= normalized.Length)
-            return normalized;
+        // her ray icin bir StringBuilder olustur
+        var satirlar = new StringBuilder[raySayisi];
+        for (int i = 0; i < raySayisi; i++)
+            satirlar[i] = new StringBuilder();
 
-        // Her ray için StringBuilder
-        var rows = new StringBuilder[rails];
-        for (int i = 0; i < rails; i++)
-            rows[i] = new StringBuilder();
+        int mevcutRay = 0;
+        bool asagiMi = true;
 
-        int currentRail = 0;
-        bool goingDown = true;
-
-        foreach (char c in normalized)
+        // her harfi ilgili raya yaz
+        for (int i = 0; i < normalMetin.Length; i++)
         {
-            rows[currentRail].Append(c);
+            satirlar[mevcutRay].Append(normalMetin[i]);
 
-            if (currentRail == 0)
-                goingDown = true;
-            else if (currentRail == rails - 1)
-                goingDown = false;
+            if (mevcutRay == 0)
+                asagiMi = true;
+            else if (mevcutRay == raySayisi - 1)
+                asagiMi = false;
 
-            currentRail += goingDown ? 1 : -1;
+            if (asagiMi)
+                mevcutRay++;
+            else
+                mevcutRay--;
         }
 
-        var sb = new StringBuilder(normalized.Length);
-        foreach (var row in rows)
-            sb.Append(row);
+        // satirlari birlestir
+        var sonuc = new StringBuilder();
+        for (int i = 0; i < raySayisi; i++)
+            sonuc.Append(satirlar[i]);
 
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

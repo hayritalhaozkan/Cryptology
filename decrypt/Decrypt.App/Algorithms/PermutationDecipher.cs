@@ -1,74 +1,50 @@
-using System;
-using System.Linq;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Permütasyon Çözme (Block Transposition Decipher).
-/// Ters permütasyon uygular.
-/// </summary>
+// permutasyon sifre cozme
+// ters permutasyon uygulayarak bloklari eski haline getirir
 public sealed class PermutationDecipher : IDecipher
 {
-    public string Name => "Permütasyon (Transposition)";
-    public string KeyHint => "Permütasyon sırası girin.\nÖrn: 3,1,4,2 (blok=4)";
-    public string[] KeyLabels => new[] { "Permütasyon (virgülle)" };
+    public string Name => "Permutasyon (Transposition)";
+    public string KeyHint => "Permutasyon sirasi girin.\nOrn: 3,1,4,2 (blok=4)";
+    public string[] KeyLabels => new[] { "Permutasyon (virgul ile)" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 1 || string.IsNullOrWhiteSpace(keys[0]))
-            throw new ArgumentException("Permütasyon anahtarı gerekli. Örn: 3,1,4,2");
+        // permutasyon anahtarini parcala
+        string[] parcalar = anahtarlar[0].Split(',');
+        int[] perm = new int[parcalar.Length];
+        for (int i = 0; i < parcalar.Length; i++)
+            perm[i] = int.Parse(parcalar[i].Trim());
 
-        var perm = ParsePerm(keys[0]);
-        int blockSize = perm.Length;
+        int blokBoyutu = perm.Length;
 
-        var normalized = TextNormalizer.Normalize(cipherText);
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
 
-        while (normalized.Length % blockSize != 0)
-            normalized += TurkishAlphabet.Letters[0];
+        // eksik kalanlari 'A' ile doldur
+        while (normalMetin.Length % blokBoyutu != 0)
+            normalMetin += 'A';
 
-        var sb = new StringBuilder(normalized.Length);
+        var sonuc = new StringBuilder();
 
-        for (int b = 0; b < normalized.Length; b += blockSize)
+        // her blok icin ters permutasyon uygula
+        for (int b = 0; b < normalMetin.Length; b += blokBoyutu)
         {
-            var block = normalized.Substring(b, blockSize);
-            var outBlock = new char[blockSize];
+            string blok = normalMetin.Substring(b, blokBoyutu);
+            char[] yeniBlok = new char[blokBoyutu];
 
-            for (int i = 0; i < blockSize; i++)
+            for (int i = 0; i < blokBoyutu; i++)
             {
-                // Encrypt: outBlock[perm[i]-1] = block[i]
-                // Decrypt (ters): outBlock[i] = block[perm[i]-1]
-                outBlock[i] = block[perm[i] - 1];
+                // sifrelemede: yeniBlok[perm[i]-1] = blok[i]
+                // cozumde: yeniBlok[i] = blok[perm[i]-1]
+                yeniBlok[i] = blok[perm[i] - 1];
             }
 
-            sb.Append(outBlock);
+            sonuc.Append(yeniBlok);
         }
 
-        return sb.ToString();
-    }
-
-    private static int[] ParsePerm(string raw)
-    {
-        var parts = raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-            throw new ArgumentException("Permütasyon boş olamaz.");
-
-        var perm = new int[parts.Length];
-        for (int i = 0; i < parts.Length; i++)
-        {
-            if (!int.TryParse(parts[i], out perm[i]))
-                throw new ArgumentException($"'{parts[i]}' geçerli bir sayı değil.");
-        }
-
-        var sorted = perm.OrderBy(x => x).ToArray();
-        for (int i = 0; i < sorted.Length; i++)
-        {
-            if (sorted[i] != i + 1)
-                throw new ArgumentException(
-                    $"Permütasyon 1'den {perm.Length}'ye kadar her sayıyı tam bir kez içermeli.");
-        }
-
-        return perm;
+        return sonuc.ToString();
     }
 }

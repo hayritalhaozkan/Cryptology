@@ -1,53 +1,46 @@
-using System;
 using System.Text;
 using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-/// <summary>
-/// Rota Çözme (Route Decipher).
-/// Şifreleme: satır satır yaz → sütun sütun oku.
-/// Çözme: sütun sütun yaz → satır satır oku.
-/// </summary>
+// rota sifre cozme (route decipher)
+// sifreleme sutun sutun okunmustu, cozme icin sutun sutun yazilir satir satir okunur
 public sealed class RouteDecipher : IDecipher
 {
     public string Name => "Rota (Route)";
-    public string KeyHint => "Satır ve sütun sayısı.\nÖrn: 4,5";
-    public string[] KeyLabels => new[] { "Satır", "Sütun" };
+    public string KeyHint => "Satir ve sutun sayisi girin.\nOrn: 4 ve 5";
+    public string[] KeyLabels => new[] { "Satir", "Sutun" };
 
-    public string Decrypt(string cipherText, string[] keys)
+    public string Decrypt(string sifreliMetin, string[] anahtarlar)
     {
-        if (keys.Length < 2
-            || !int.TryParse(keys[0], out int rows)
-            || !int.TryParse(keys[1], out int cols))
-            throw new ArgumentException("Satır ve sütun sayısı gerekli. Örn: 4 ve 5");
+        int satirSayisi = int.Parse(anahtarlar[0]);
+        int sutunSayisi = int.Parse(anahtarlar[1]);
 
-        if (rows <= 0 || cols <= 0)
-            throw new ArgumentException("Satır ve sütun pozitif olmalı.");
+        int izgaraBoyutu = satirSayisi * sutunSayisi;
 
-        int gridSize = rows * cols;
+        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
 
-        var normalized = TextNormalizer.Normalize(cipherText);
+        // eksikse 'A' ile doldur
+        while (normalMetin.Length < izgaraBoyutu)
+            normalMetin += 'A';
 
-        while (normalized.Length < gridSize)
-            normalized += TurkishAlphabet.Letters[0];
+        // fazlaysa kirp
+        if (normalMetin.Length > izgaraBoyutu)
+            normalMetin = normalMetin.Substring(0, izgaraBoyutu);
 
-        if (normalized.Length > gridSize)
-            normalized = normalized.Substring(0, gridSize);
+        // sifreleme sutun sutun okumustu, cozme icin sutun sutun yaz
+        char[,] izgara = new char[satirSayisi, sutunSayisi];
+        int sayac = 0;
+        for (int st = 0; st < sutunSayisi; st++)
+            for (int s = 0; s < satirSayisi; s++)
+                izgara[s, st] = normalMetin[sayac++];
 
-        // Şifreleme sütun-major olarak okumuştu → çözmede sütun-major olarak yaz
-        var grid = new char[rows, cols];
-        int idx = 0;
-        for (int c = 0; c < cols; c++)
-            for (int r = 0; r < rows; r++)
-                grid[r, c] = normalized[idx++];
+        // satir satir oku
+        var sonuc = new StringBuilder();
+        for (int s = 0; s < satirSayisi; s++)
+            for (int st = 0; st < sutunSayisi; st++)
+                sonuc.Append(izgara[s, st]);
 
-        // Satır satır oku
-        var sb = new StringBuilder(gridSize);
-        for (int r = 0; r < rows; r++)
-            for (int c = 0; c < cols; c++)
-                sb.Append(grid[r, c]);
-
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }

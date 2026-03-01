@@ -1,60 +1,46 @@
-using System;
 using System.Text;
 using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-/// <summary>
-/// Rota Şifresi (Route Cipher).
-/// Metin satır×sütun'luk bir ızgaraya yazılır (satır satır), sonra sütun sütun okunur.
-/// 
-/// Anahtar: "satır,sütun" biçiminde. Örn: "4,5" → 4 satır 5 sütun = 20 hücre.
-/// Metin 20 karakterden kısa ise 'A' ile doldurulur.
-/// 
-/// Yazma: soldan sağa, yukarıdan aşağı.
-/// Okuma: yukarıdan aşağıya, soldan sağa (column-major order).
-/// </summary>
+// rota sifresi (route cipher)
+// metin satirxsutun izgaraya yazilir, sonra sutun sutun okunur
 public sealed class RouteCipher : ICipher
 {
     public string Name => "Rota (Route)";
-    public string KeyHint => "Satır ve sütun sayısı.\nÖrn: 4,5";
-    public string[] KeyLabels => new[] { "Satır", "Sütun" };
+    public string KeyHint => "Satir ve sutun sayisi girin.\nOrn: 4 ve 5";
+    public string[] KeyLabels => new[] { "Satir", "Sutun" };
 
-    public string Encrypt(string plainText, string[] keys)
+    public string Encrypt(string duzMetin, string[] anahtarlar)
     {
-        if (keys.Length < 2
-            || !int.TryParse(keys[0], out int rows)
-            || !int.TryParse(keys[1], out int cols))
-            throw new ArgumentException("Satır ve sütun sayısı (tamsayı) gerekli. Örn: 4 ve 5");
+        int satirSayisi = int.Parse(anahtarlar[0]);
+        int sutunSayisi = int.Parse(anahtarlar[1]);
 
-        if (rows <= 0 || cols <= 0)
-            throw new ArgumentException("Satır ve sütun pozitif olmalı.");
+        int izgaraBoyutu = satirSayisi * sutunSayisi;
 
-        int gridSize = rows * cols;
+        string normalMetin = TextNormalizer.Normalize(duzMetin);
 
-        var normalized = TextNormalizer.Normalize(plainText);
+        // eksikse 'A' ile doldur
+        while (normalMetin.Length < izgaraBoyutu)
+            normalMetin += 'A';
 
-        // Padding
-        while (normalized.Length < gridSize)
-            normalized += TurkishAlphabet.Letters[0]; // 'A'
+        // fazlaysa kirp
+        if (normalMetin.Length > izgaraBoyutu)
+            normalMetin = normalMetin.Substring(0, izgaraBoyutu);
 
-        // Metni grid boyutuna kırp (fazlası varsa — uyarı yerine kırp)
-        if (normalized.Length > gridSize)
-            normalized = normalized.Substring(0, gridSize);
+        // izgaraya satir satir yaz
+        char[,] izgara = new char[satirSayisi, sutunSayisi];
+        int sayac = 0;
+        for (int s = 0; s < satirSayisi; s++)
+            for (int st = 0; st < sutunSayisi; st++)
+                izgara[s, st] = normalMetin[sayac++];
 
-        // Grid'e satır satır yaz
-        var grid = new char[rows, cols];
-        int idx = 0;
-        for (int r = 0; r < rows; r++)
-            for (int c = 0; c < cols; c++)
-                grid[r, c] = normalized[idx++];
+        // sutun sutun oku
+        var sonuc = new StringBuilder();
+        for (int st = 0; st < sutunSayisi; st++)
+            for (int s = 0; s < satirSayisi; s++)
+                sonuc.Append(izgara[s, st]);
 
-        // Sütun sütun oku (column-major)
-        var sb = new StringBuilder(gridSize);
-        for (int c = 0; c < cols; c++)
-            for (int r = 0; r < rows; r++)
-                sb.Append(grid[r, c]);
-
-        return sb.ToString();
+        return sonuc.ToString();
     }
 }
