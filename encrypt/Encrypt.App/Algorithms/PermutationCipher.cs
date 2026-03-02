@@ -1,100 +1,84 @@
+using System.Globalization;
 using System.Text;
-using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-// ============================================================================
-// PERMUTASYON SIFRESI (BLOCK TRANSPOSITION CIPHER)
-// ============================================================================
-// Diger sifrelerden farkli olarak bu sifre harfleri DEGISTIRMEZ,
-// sadece YERLERINI DEGISTIRIR (yer degistirme / transposition).
-//
-// NASIL CALISIR?
-// 1. Metin belirli boyuttaki BLOKLARA bolunur
-// 2. Her bloktaki harfler, permutasyon sirasina gore yeniden dizilir
-//
-// ANAHTAR: Virgullerle ayrilmis sayilar. Ornegin: 3,1,4,2
-//   Bu demek ki: blok boyutu = 4
-//   1. pozisyondaki harf -> 3. pozisyona gider
-//   2. pozisyondaki harf -> 1. pozisyona gider
-//   3. pozisyondaki harf -> 4. pozisyona gider
-//   4. pozisyondaki harf -> 2. pozisyona gider
-//
-// ORNEK:
-//   Metin: "MERHABA"    Anahtar: 3,1,4,2
-//   Blok boyutu = 4
-//   
-//   1. blok: M E R H
-//     M(1. poz) -> 3. poza gider
-//     E(2. poz) -> 1. poza gider
-//     R(3. poz) -> 4. poza gider
-//     H(4. poz) -> 2. poza gider
-//     Sonuc: E H M R
-//   
-//   2. blok: A B A (eksik! 'A' ile doldurulur -> A B A A)
-//     A(1. poz) -> 3. poza gider
-//     B(2. poz) -> 1. poza gider  
-//     A(3. poz) -> 4. poza gider
-//     A(4. poz) -> 2. poza gider
-//     Sonuc: B A A A
-//   
-//   Toplam sonuc: "EHMRBAAA"
-//
-// NOT: Eger metnin uzunlugu blok boyutuna tam bolunmezse
-//      son blok 'A' harfleriyle doldurulur (padding).
-// ============================================================================
-public sealed class PermutationCipher : ICipher
+// PERMUTASYON SIFRESI - BLOK YER DEGISTIRME
+// harfleri degistirmez, sadece yerlerini degistirir
+// metin bloklara bolunur, her bloktaki harfler permutasyon sirasina gore yeniden dizilir
+// anahtar: virgul ile ayrilmis sayilar, ornegin 3,1,4,2
+// 1. harf 3. yere, 2. harf 1. yere, 3. harf 4. yere, 4. harf 2. yere gider
+public class PermutasyonSifrele
 {
-    public string Name => "Permutasyon (Transposition)";
-    public string KeyHint => "Permutasyon sirasi girin.\nOrn: 3,1,4,2 (blok=4)";
-    public string[] KeyLabels => new[] { "Permutasyon (virgul ile)" };
+    // turk alfabesi - 29 harf
+    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    public string Encrypt(string duzMetin, string[] anahtarlar)
+    public static string Sifrele(string metin, string permMetin)
     {
-        // anahtar stringi parcala ve sayilara cevir
-        // "3,1,4,2" -> [3, 1, 4, 2]
-        string[] parcalar = anahtarlar[0].Split(',');
+        string temizMetin = MetniTemizle(metin);
+
+        // permutasyon anahtarini parcala
+        // ornegin "3,1,4,2" -> [3, 1, 4, 2]
+        string[] parcalar = permMetin.Split(',');
         int[] perm = new int[parcalar.Length];
         for (int i = 0; i < parcalar.Length; i++)
             perm[i] = int.Parse(parcalar[i].Trim());
 
-        // blok boyutu = permutasyon uzunlugu
         int blokBoyutu = perm.Length;
 
-        // metni normalize et
-        string normalMetin = TextNormalizer.Normalize(duzMetin);
+        // metin blok boyutuna tam bolunmuyorsa sonuna A ekle
+        while (temizMetin.Length % blokBoyutu != 0)
+            temizMetin = temizMetin + "A";
 
-        // metin uzunlugu blok boyutuna tam bolunmuyorsa
-        // sonuna 'A' harfi ekle (padding)
-        // ornegin: metin = "MERHABA" (7 harf), blok = 4
-        // 7 % 4 = 3 (tam bolunmuyor), 1 tane 'A' eklenir -> "MERHABAA" (8 harf)
-        while (normalMetin.Length % blokBoyutu != 0)
-            normalMetin += 'A';
-
-        var sonuc = new StringBuilder();
+        string sonuc = "";
 
         // metni blok blok isle
-        for (int b = 0; b < normalMetin.Length; b += blokBoyutu)
+        for (int b = 0; b < temizMetin.Length; b = b + blokBoyutu)
         {
-            // mevcut bloku al (ornegin ilk 4 harf)
-            string blok = normalMetin.Substring(b, blokBoyutu);
-
-            // yeni blok icin bos dizi olustur
+            // bu bloktaki harfleri al
             char[] yeniBlok = new char[blokBoyutu];
 
-            // permutasyonu uygula
             for (int i = 0; i < blokBoyutu; i++)
             {
-                // perm[i] = i. harfin gidecegi pozisyon (1-indexed)
-                // ornegin perm[0] = 3 ise, 0. harf 3. pozisyona gider
-                // -1 cunku perm 1'den basliyor ama dizi 0'dan basliyor
-                yeniBlok[perm[i] - 1] = blok[i];
+                char harf = temizMetin[b + i];
+                // bu harf perm[i]. pozisyona gidecek
+                // -1 cunku perm 1den basliyor ama dizi 0dan
+                yeniBlok[perm[i] - 1] = harf;
             }
 
             // yeni bloku sonuca ekle
-            sonuc.Append(yeniBlok);
+            for (int i = 0; i < blokBoyutu; i++)
+                sonuc = sonuc + yeniBlok[i];
         }
 
-        return sonuc.ToString();
+        return sonuc;
+    }
+
+    // metni buyuk harfe cevir ve sadece turk alfabesindeki harfleri birak
+    static string MetniTemizle(string girdi)
+    {
+        if (girdi == null || girdi.Length == 0)
+            return "";
+
+        CultureInfo turkKultur = new CultureInfo("tr-TR");
+        string buyukHarf = girdi.ToUpper(turkKultur);
+
+        string temiz = "";
+        for (int i = 0; i < buyukHarf.Length; i++)
+        {
+            char c = buyukHarf[i];
+            bool var = false;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == c)
+                {
+                    var = true;
+                    break;
+                }
+            }
+            if (var)
+                temiz = temiz + c;
+        }
+        return temiz;
     }
 }

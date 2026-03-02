@@ -1,96 +1,96 @@
-using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
-using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-// ============================================================================
-// SAYI ANAHTARLI SIFRE (VIGENERE CIPHER - SAYISAL VERSIYON)
-// ============================================================================
-// Caesar sifresinde tek bir kaydirma sayisi vardi ve her harfe ayni kaydirma uygulaniyordu.
-// Vigenere sifresinde ise bir SAYI DIZISI kullanilir ve her harfe
-// dizideki farkli bir sayi ile kaydirma uygulanir.
-//
-// NASIL CALISIR?
-// Anahtar bir sayi dizisidir, ornegin: 3, 7, 1
-// Metnin 1. harfine 3 kaydirma uygulanir
-// Metnin 2. harfine 7 kaydirma uygulanir
-// Metnin 3. harfine 1 kaydirma uygulanir
-// Metnin 4. harfine tekrar 3 kaydirma uygulanir (anahtar basa doner)
-// Metnin 5. harfine tekrar 7 kaydirma uygulanir
-// ... ve boyle devam eder (dongusel / cyclic)
-//
-// MATEMATIKSEL FORMUL:
-//   E(xi) = (xi + k[i mod anahtar_uzunlugu]) mod 29
-//
-// ORNEK:
-//   Metin: "MERHABA"    Anahtar: 3,7,1
-//   M(16) + 3 = 19 -> Ö
-//   E(5)  + 7 = 12 -> J
-//   R(20) + 1 = 21 -> S
-//   H(9)  + 3 = 12 -> J  (anahtar basa dondu)
-//   A(0)  + 7 = 7  -> G
-//   B(1)  + 1 = 2  -> C
-//   A(0)  + 3 = 3  -> Ç
-//   Sonuc: "ÖJSJGCÇ"
-//
-// NEDEN CAESAR'DAN DAHA GUVENLI?
-//   Caesar'da ayni harf her zaman ayni harfe donusur (orn: A hep D olur)
-//   Vigenere'de ise ayni harf farkli harflere donusebilir cunku
-//   her pozisyonda farkli kaydirma uygulanir.
-// ============================================================================
-public sealed class VigenereCipher : ICipher
+// VIGENERE SIFRESI - SAYI ANAHTARLI SIFRE
+// her harfe farkli bir kaydirma uygular
+// anahtar: virgul ile ayrilmis sayilar, ornegin 3,7,1
+// 1. harfe 3, 2. harfe 7, 3. harfe 1 kaydirma uygulanir
+// anahtar bitince basa doner
+public class VigenereSifrele
 {
-    public string Name => "Sayi Anahtarli (Vigenere)";
-    public string KeyHint => "Virgul ile ayrilmis sayilar girin.\nOrn: 3,7,1,15,22";
-    public string[] KeyLabels => new[] { "Sayisal Anahtar" };
+    // turk alfabesi - 29 harf
+    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    public string Encrypt(string duzMetin, string[] anahtarlar)
+    public static string Sifrele(string metin, string anahtarMetin)
     {
-        // kullanicinin girdigi anahtari virgullerden parcala
-        // ornegin "3,7,1" -> ["3", "7", "1"]
-        string[] parcalar = anahtarlar[0].Split(',');
+        string temizMetin = MetniTemizle(metin);
 
-        // string parcalari sayiya cevir ve listeye ekle
-        var anahtarSayilari = new List<int>();
+        // anahtari virgullerden bol ve sayilara cevir
+        string[] parcalar = anahtarMetin.Split(',');
+        int[] anahtarSayilari = new int[parcalar.Length];
+        int anahtarUzunluk = 0;
         for (int i = 0; i < parcalar.Length; i++)
         {
-            string parca = parcalar[i].Trim(); // basindaki/sonundaki bosluklari temizle
+            string parca = parcalar[i].Trim();
             if (parca.Length > 0)
-                anahtarSayilari.Add(int.Parse(parca));
-        }
-        // simdi anahtarSayilari = [3, 7, 1]
-
-        // metni normalize et
-        string normalMetin = TextNormalizer.Normalize(duzMetin);
-
-        var sonuc = new StringBuilder();
-        int anahtarIndex = 0; // anahtarin hangi elemanindayiz
-
-        for (int i = 0; i < normalMetin.Length; i++)
-        {
-            char harf = normalMetin[i];
-            int x = TurkishAlphabet.IndexOf(harf);
-
-            if (x >= 0)
             {
-                // anahtardaki simdiki kaydirma degerini al
-                // % (mod) islemiyle anahtar basa doner
-                // ornegin anahtar [3,7,1] ve 4. harfteyiz: 3 % 3 = 0 -> tekrar 3 kullanilir
-                int kaydirma = anahtarSayilari[anahtarIndex % anahtarSayilari.Count];
+                anahtarSayilari[anahtarUzunluk] = int.Parse(parca);
+                anahtarUzunluk++;
+            }
+        }
+
+        string sonuc = "";
+        int anahtarSirasi = 0; // anahtarin hangi elemanindayiz
+
+        for (int i = 0; i < temizMetin.Length; i++)
+        {
+            char harf = temizMetin[i];
+
+            // harfin alfabedeki yerini bul
+            int yer = -1;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == harf)
+                {
+                    yer = j;
+                    break;
+                }
+            }
+
+            if (yer >= 0)
+            {
+                // simdiki anahtar degerini al
+                int kaydirma = anahtarSayilari[anahtarSirasi % anahtarUzunluk];
 
                 // harfi kaydir
-                sonuc.Append(TurkishAlphabet.CharAt(x + kaydirma));
+                int yeniYer = (yer + kaydirma) % 29;
+                if (yeniYer < 0) yeniYer = yeniYer + 29;
+                sonuc = sonuc + alfabe[yeniYer];
 
-                // bir sonraki anahtar elemanina gec
-                anahtarIndex++;
-            }
-            else
-            {
-                sonuc.Append(harf);
+                anahtarSirasi++;
             }
         }
 
-        return sonuc.ToString();
+        return sonuc;
+    }
+
+    // metni buyuk harfe cevir ve sadece turk alfabesindeki harfleri birak
+    static string MetniTemizle(string girdi)
+    {
+        if (girdi == null || girdi.Length == 0)
+            return "";
+
+        CultureInfo turkKultur = new CultureInfo("tr-TR");
+        string buyukHarf = girdi.ToUpper(turkKultur);
+
+        string temiz = "";
+        for (int i = 0; i < buyukHarf.Length; i++)
+        {
+            char c = buyukHarf[i];
+            bool var = false;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == c)
+                {
+                    var = true;
+                    break;
+                }
+            }
+            if (var)
+                temiz = temiz + c;
+        }
+        return temiz;
     }
 }

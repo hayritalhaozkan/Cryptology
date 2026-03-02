@@ -1,71 +1,92 @@
-using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
-using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-// ============================================================================
-// SAYI ANAHTARLI SIFRE COZME (VIGENERE DECIPHER)
-// ============================================================================
-// Vigenere sifresinin tersini yapar.
-// Sifreleme her harfe farkli bir kaydirma EKLIYORDU,
-// cozme ayni kaydirmayi CIKARIR.
-//
-// SIFRELEME: E(xi) = (xi + ki) mod 29
-// COZME:     D(yi) = (yi - ki) mod 29
-//
-// ORNEK:
-//   Sifreli metin: "ÖJSJGCÇ"    Anahtar: 3,7,1
-//   Ö(18) - 3 = 15 -> M    (1. anahtar elemani: 3)
-//   J(12) - 7 = 5  -> E    (2. anahtar elemani: 7)
-//   S(21) - 1 = 20 -> R    (3. anahtar elemani: 1)
-//   J(12) - 3 = 9  -> H    (tekrar 1. eleman: 3)
-//   G(7)  - 7 = 0  -> A    (tekrar 2. eleman: 7)
-//   C(2)  - 1 = 1  -> B    (tekrar 3. eleman: 1)
-//   Ç(3)  - 3 = 0  -> A    (tekrar 1. eleman: 3)
-//   Sonuc: "MERHABA"
-// ============================================================================
-public sealed class VigenereDecipher : IDecipher
+// VIGENERE SIFRE COZME
+// sifreleme her harfe farkli kaydirma EKLIYORDU
+// cozme ayni kaydirmayi CIKARIR
+// formul: cozulmus = (harf - anahtar) mod 29
+public class VigenereCoz
 {
-    public string Name => "Sayi Anahtarli (Vigenere)";
-    public string KeyHint => "Virgul ile ayrilmis sayilar girin.\nOrn: 3,7,1,15,22";
-    public string[] KeyLabels => new[] { "Sayisal Anahtar" };
+    // turk alfabesi - 29 harf
+    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    public string Decrypt(string sifreliMetin, string[] anahtarlar)
+    public static string Coz(string sifreliMetin, string anahtarMetin)
     {
-        // anahtari virgullerden parcala ve sayilara cevir
-        string[] parcalar = anahtarlar[0].Split(',');
-        var anahtarSayilari = new List<int>();
+        string temizMetin = MetniTemizle(sifreliMetin);
+
+        // anahtari virgullerden bol ve sayilara cevir
+        string[] parcalar = anahtarMetin.Split(',');
+        int[] anahtarSayilari = new int[parcalar.Length];
+        int anahtarUzunluk = 0;
         for (int i = 0; i < parcalar.Length; i++)
         {
             string parca = parcalar[i].Trim();
             if (parca.Length > 0)
-                anahtarSayilari.Add(int.Parse(parca));
+            {
+                anahtarSayilari[anahtarUzunluk] = int.Parse(parca);
+                anahtarUzunluk++;
+            }
         }
 
-        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
+        string sonuc = "";
+        int anahtarSirasi = 0;
 
-        var sonuc = new StringBuilder();
-        int anahtarIndex = 0;
-
-        for (int i = 0; i < normalMetin.Length; i++)
+        for (int i = 0; i < temizMetin.Length; i++)
         {
-            char harf = normalMetin[i];
-            int y = TurkishAlphabet.IndexOf(harf);
+            char harf = temizMetin[i];
 
-            if (y >= 0)
+            // harfin alfabedeki yerini bul
+            int yer = -1;
+            for (int j = 0; j < alfabe.Length; j++)
             {
-                // sifreleme + yapmisti, cozme - yapar
-                int kaydirma = anahtarSayilari[anahtarIndex % anahtarSayilari.Count];
-                sonuc.Append(TurkishAlphabet.CharAt(y - kaydirma));
-                anahtarIndex++;
+                if (alfabe[j] == harf)
+                {
+                    yer = j;
+                    break;
+                }
             }
-            else
+
+            if (yer >= 0)
             {
-                sonuc.Append(harf);
+                // cozme: geri kaydir (sifreleme + yapmisti, cozme - yapar)
+                int kaydirma = anahtarSayilari[anahtarSirasi % anahtarUzunluk];
+                int yeniYer = (yer - kaydirma) % 29;
+                if (yeniYer < 0) yeniYer = yeniYer + 29;
+                sonuc = sonuc + alfabe[yeniYer];
+
+                anahtarSirasi++;
             }
         }
 
-        return sonuc.ToString();
+        return sonuc;
+    }
+
+    static string MetniTemizle(string girdi)
+    {
+        if (girdi == null || girdi.Length == 0)
+            return "";
+
+        CultureInfo turkKultur = new CultureInfo("tr-TR");
+        string buyukHarf = girdi.ToUpper(turkKultur);
+
+        string temiz = "";
+        for (int i = 0; i < buyukHarf.Length; i++)
+        {
+            char c = buyukHarf[i];
+            bool var = false;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == c)
+                {
+                    var = true;
+                    break;
+                }
+            }
+            if (var)
+                temiz = temiz + c;
+        }
+        return temiz;
     }
 }

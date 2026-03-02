@@ -1,72 +1,92 @@
+using System.Globalization;
 using System.Text;
-using Decrypt.App.Helpers;
 
 namespace Decrypt.App.Algorithms;
 
-// ============================================================================
-// DOGRUSAL SIFRE COZME (AFFINE DECIPHER)
-// ============================================================================
-// Affine sifresinin tersini yapar.
-//
-// SIFRELEME FORMULU: E(x) = (a * x + b) mod 29
-// COZME FORMULU:     D(y) = a^(-1) * (y - b) mod 29
-//
-// a^(-1) nedir?
-//   a'nin moduler tersidir. Yani a * a^(-1) = 1 (mod 29) olan sayi.
-//   Ornegin: a=2 ise, 2 * 15 = 30, 30 mod 29 = 1 -> a^(-1) = 15
-//
-// COZME NASIL CALISIR?
-//   1. Once a'nin tersini (a^-1) bul
-//   2. Sifreli harfin indexinden b'yi cikar
-//   3. Sonucu a^-1 ile carp
-//   4. mod 29 al
-//
-// ORNEK:
-//   Sifreli metin: "EG"    Anahtar: a=2, b=5
-//   a^(-1) = 15  (cunku 2*15 = 30, 30 mod 29 = 1)
-//
-//   E(5) -> 15 * (5 - 5) mod 29 = 15 * 0 mod 29 = 0 -> A
-//   G(7) -> 15 * (7 - 5) mod 29 = 15 * 2 mod 29 = 30 mod 29 = 1 -> B
-//   Sonuc: "AB"
-// ============================================================================
-public sealed class AffineDecipher : IDecipher
+// AFFINE SIFRE COZME
+// sifreleme: y = (a * x + b) mod 29
+// cozme:     x = a_tersi * (y - b) mod 29
+// a_tersi: a * a_tersi = 1 (mod 29) olan sayi
+public class AffineCoz
 {
-    public string Name => "Dogrusal (Affine)";
-    public string KeyHint => "a ve b degerlerini girin. Orn: a=2, b=5";
-    public string[] KeyLabels => new[] { "a", "b" };
+    // turk alfabesi - 29 harf
+    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    public string Decrypt(string sifreliMetin, string[] anahtarlar)
+    public static string Coz(string sifreliMetin, int a, int b)
     {
-        // a ve b degerlerini al
-        int a = int.Parse(anahtarlar[0]);
-        int b = int.Parse(anahtarlar[1]);
+        string temizMetin = MetniTemizle(sifreliMetin);
 
         // a'nin moduler tersini bul
-        // bu deger sifre cozme formulunde kullanilacak
-        int aTersi = TurkishAlphabet.ModInverse(a, TurkishAlphabet.N);
+        // yani a * ters = 1 (mod 29) olan ters degerini bul
+        int aTersi = ModulerTersBul(a, 29);
 
-        string normalMetin = TextNormalizer.Normalize(sifreliMetin);
+        string sonuc = "";
 
-        var sonuc = new StringBuilder();
-
-        for (int i = 0; i < normalMetin.Length; i++)
+        for (int i = 0; i < temizMetin.Length; i++)
         {
-            char harf = normalMetin[i];
-            int y = TurkishAlphabet.IndexOf(harf);
+            char harf = temizMetin[i];
 
-            if (y >= 0)
+            // harfin alfabedeki yerini bul
+            int yer = -1;
+            for (int j = 0; j < alfabe.Length; j++)
             {
-                // affine cozme formulu: x = a^(-1) * (y - b) mod 29
-                // once y'den b'yi cikar, sonra a'nin tersiyle carp, sonra mod 29 al
-                int cozulmus = ((aTersi * (y - b)) % TurkishAlphabet.N + TurkishAlphabet.N) % TurkishAlphabet.N;
-                sonuc.Append(TurkishAlphabet.CharAt(cozulmus));
+                if (alfabe[j] == harf)
+                {
+                    yer = j;
+                    break;
+                }
             }
-            else
+
+            if (yer >= 0)
             {
-                sonuc.Append(harf);
+                // cozme formulu: x = aTersi * (y - b) mod 29
+                int cozulmus = (aTersi * (yer - b)) % 29;
+                if (cozulmus < 0) cozulmus = cozulmus + 29;
+                sonuc = sonuc + alfabe[cozulmus];
             }
         }
 
-        return sonuc.ToString();
+        return sonuc;
+    }
+
+    // moduler ters bulma
+    // a * x = 1 (mod m) saglayan x degerini bulur
+    // 1den m-1e kadar tum sayilari dener
+    static int ModulerTersBul(int a, int m)
+    {
+        a = ((a % m) + m) % m;
+        for (int x = 1; x < m; x++)
+        {
+            if ((a * x) % m == 1)
+                return x;
+        }
+        return -1; // ters bulunamadi
+    }
+
+    static string MetniTemizle(string girdi)
+    {
+        if (girdi == null || girdi.Length == 0)
+            return "";
+
+        CultureInfo turkKultur = new CultureInfo("tr-TR");
+        string buyukHarf = girdi.ToUpper(turkKultur);
+
+        string temiz = "";
+        for (int i = 0; i < buyukHarf.Length; i++)
+        {
+            char c = buyukHarf[i];
+            bool var = false;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == c)
+                {
+                    var = true;
+                    break;
+                }
+            }
+            if (var)
+                temiz = temiz + c;
+        }
+        return temiz;
     }
 }

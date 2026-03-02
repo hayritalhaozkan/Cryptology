@@ -1,106 +1,167 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Decrypt.App.Algorithms;
-using MailKit;
-using MailKit.Net.Imap;
-using MailKit.Search;
 
 namespace Decrypt.App.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly List<IDecipher> _deciphers = new()
+    // algoritma isimleri listesi
+    private readonly string[] algoritmaIsimleri = new string[]
     {
-        new CaesarDecipher(),
-        new AffineDecipher(),
-        new SubstitutionDecipher(),
-        new VigenereDecipher(),
-        new PermutationDecipher(),
-        new RouteDecipher(),
-        new ZigzagDecipher(),
+        "Kaydirmali",
+        "Dogrusal",
+        "Yer Degistirme",
+        "Sayi Anahtarli",
+        "Permutasyon",
+        "Rota",
+        "Zigzag",
     };
 
-    private IDecipher _selectedDecipher;
-    private readonly List<TextBox> _keyTextBoxes = new();
+    // her algoritma icin anahtar ipucu
+    private readonly string[] anahtarIpuclari = new string[]
+    {
+        "Kaydirma sayisi girin (orn: 3)",
+        "a ve b degerlerini girin. Orn: a=2, b=5",
+        "29 harflik karisik alfabe girin.\nOrn: ÜYZABCÇDEFGĞHIIJKLMNOÖPRSŞTÜV",
+        "Virgul ile ayrilmis sayilar girin.\nOrn: 3,7,1,15,22",
+        "Permutasyon sirasi girin.\nOrn: 3,1,4,2 (blok=4)",
+        "Satir ve sutun sayisi girin.\nOrn: 4 ve 5",
+        "Ray sayisi girin. Orn: 3",
+    };
+
+    // her algoritma icin anahtar alan isimleri
+    private readonly string[][] anahtarAlanlari = new string[][]
+    {
+        new[] { "Kaydirma (k)" },           // caesar
+        new[] { "a", "b" },                 // affine
+        new[] { "Anahtar Alfabesi (29 harf)" }, // substitution
+        new[] { "Sayisal Anahtar" },        // vigenere
+        new[] { "Permutasyon (virgul ile)" }, // permutation
+        new[] { "Satir", "Sutun" },         // route
+        new[] { "Ray Sayisi" },             // zigzag
+    };
+
+    private int seciliAlgoritma = 0;  // hangi algoritma secili
+    private readonly List<TextBox> anahtarKutulari = new();  // anahtar girisi kutulari
 
     public MainWindow()
     {
         InitializeComponent();
 
-        foreach (var d in _deciphers)
-            MethodCombo.Items.Add(d.Name);
+        // combobox'a algoritma isimlerini ekle
+        for (int i = 0; i < algoritmaIsimleri.Length; i++)
+            MethodCombo.Items.Add(algoritmaIsimleri[i]);
 
         MethodCombo.SelectedIndex = 0;
-        _selectedDecipher = _deciphers[0];
+        seciliAlgoritma = 0;
 
-        MethodCombo.SelectionChanged += OnMethodChanged;
-        DecryptBtn.Click += DoDecrypt;
-        CopyBtn.Click += CopyResult;
-        ClearBtn.Click += ClearAll;
-        FetchMailBtn.Click += FetchMail;
+        MethodCombo.SelectionChanged += AlgoritmaSecildi;
+        DecryptBtn.Click += CozButonu;
+        CopyBtn.Click += KopyalaButonu;
+        ClearBtn.Click += TemizleButonu;
 
-        BuildKeyFields(_selectedDecipher);
+
+        AnahtarAlanlariniOlustur(0);
     }
 
-    private void OnMethodChanged(object? sender, SelectionChangedEventArgs e)
+    private void AlgoritmaSecildi(object? sender, SelectionChangedEventArgs e)
     {
         int idx = MethodCombo.SelectedIndex;
-        if (idx < 0 || idx >= _deciphers.Count) return;
+        if (idx < 0 || idx >= algoritmaIsimleri.Length) return;
 
-        _selectedDecipher = _deciphers[idx];
-        BuildKeyFields(_selectedDecipher);
+        seciliAlgoritma = idx;
+        AnahtarAlanlariniOlustur(idx);
     }
 
-    private void BuildKeyFields(IDecipher decipher)
+    private void AnahtarAlanlariniOlustur(int algoritmaIndex)
     {
         KeyFieldsPanel.Children.Clear();
-        _keyTextBoxes.Clear();
+        anahtarKutulari.Clear();
 
-        HintText.Text = decipher.KeyHint;
+        HintText.Text = anahtarIpuclari[algoritmaIndex];
 
-        foreach (var label in decipher.KeyLabels)
+        string[] alanlar = anahtarAlanlari[algoritmaIndex];
+        for (int i = 0; i < alanlar.Length; i++)
         {
-            var lbl = new TextBlock
+            var etiket = new TextBlock
             {
-                Text = label + ":",
+                Text = alanlar[i] + ":",
                 FontSize = 12,
                 Margin = new Avalonia.Thickness(0, 2, 0, 0)
             };
 
-            var tb = new TextBox
+            var kutu = new TextBox
             {
-                Watermark = label,
+                Watermark = alanlar[i],
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
 
-            KeyFieldsPanel.Children.Add(lbl);
-            KeyFieldsPanel.Children.Add(tb);
-            _keyTextBoxes.Add(tb);
+            KeyFieldsPanel.Children.Add(etiket);
+            KeyFieldsPanel.Children.Add(kutu);
+            anahtarKutulari.Add(kutu);
         }
     }
 
-    private string[] CollectKeys()
+    private string[] AnahtarlariTopla()
     {
-        var keys = new string[_keyTextBoxes.Count];
-        for (int i = 0; i < _keyTextBoxes.Count; i++)
-            keys[i] = _keyTextBoxes[i].Text ?? "";
-        return keys;
+        string[] anahtarlar = new string[anahtarKutulari.Count];
+        for (int i = 0; i < anahtarKutulari.Count; i++)
+            anahtarlar[i] = anahtarKutulari[i].Text ?? "";
+        return anahtarlar;
     }
 
-    private void DoDecrypt(object? sender, RoutedEventArgs e)
+    // coz butonuna basildiginda
+    private void CozButonu(object? sender, RoutedEventArgs e)
     {
         try
         {
-            var cipher = CipherTextBox.Text ?? "";
-            var keys = CollectKeys();
+            string sifreliMetin = CipherTextBox.Text ?? "";
+            string[] anahtarlar = AnahtarlariTopla();
+            string cozulmusMetin = "";
 
-            PlainTextBox.Text = _selectedDecipher.Decrypt(cipher, keys);
-            StatusText.Text = $"✅ {_selectedDecipher.Name} ile çözme tamamlandı.";
+            // hangi algoritma seciliyse onu calistir
+            if (seciliAlgoritma == 0) // Caesar
+            {
+                int kaydirma = int.Parse(anahtarlar[0]);
+                cozulmusMetin = CaesarCoz.Coz(sifreliMetin, kaydirma);
+            }
+            else if (seciliAlgoritma == 1) // Affine
+            {
+                int a = int.Parse(anahtarlar[0]);
+                int b = int.Parse(anahtarlar[1]);
+                cozulmusMetin = AffineCoz.Coz(sifreliMetin, a, b);
+            }
+            else if (seciliAlgoritma == 2) // Substitution
+            {
+                cozulmusMetin = SubstitutionCoz.Coz(sifreliMetin, anahtarlar[0]);
+            }
+            else if (seciliAlgoritma == 3) // Vigenere
+            {
+                cozulmusMetin = VigenereCoz.Coz(sifreliMetin, anahtarlar[0]);
+            }
+            else if (seciliAlgoritma == 4) // Permutasyon
+            {
+                cozulmusMetin = PermutasyonCoz.Coz(sifreliMetin, anahtarlar[0]);
+            }
+            else if (seciliAlgoritma == 5) // Rota
+            {
+                int satir = int.Parse(anahtarlar[0]);
+                int sutun = int.Parse(anahtarlar[1]);
+                cozulmusMetin = RotaCoz.Coz(sifreliMetin, satir, sutun);
+            }
+            else if (seciliAlgoritma == 6) // Zigzag
+            {
+                int raySayisi = int.Parse(anahtarlar[0]);
+                cozulmusMetin = ZigzagCoz.Coz(sifreliMetin, raySayisi);
+            }
+
+            PlainTextBox.Text = cozulmusMetin;
+            StatusText.Text = $"✅ {algoritmaIsimleri[seciliAlgoritma]} ile çözme tamamlandı.";
             StatusText.Foreground = Avalonia.Media.Brushes.ForestGreen;
         }
         catch (Exception ex)
@@ -111,10 +172,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void CopyResult(object? sender, RoutedEventArgs e)
+    private async void KopyalaButonu(object? sender, RoutedEventArgs e)
     {
-        var result = PlainTextBox.Text ?? "";
-        if (string.IsNullOrWhiteSpace(result))
+        var sonuc = PlainTextBox.Text ?? "";
+        if (string.IsNullOrWhiteSpace(sonuc))
         {
             StatusText.Text = "⚠ Kopyalanacak sonuç yok.";
             StatusText.Foreground = Avalonia.Media.Brushes.Orange;
@@ -123,7 +184,7 @@ public partial class MainWindow : Window
 
         if (Clipboard is not null)
         {
-            await Clipboard.SetTextAsync(result);
+            await Clipboard.SetTextAsync(sonuc);
             StatusText.Text = "📋 Sonuç panoya kopyalandı.";
             StatusText.Foreground = Avalonia.Media.Brushes.ForestGreen;
         }
@@ -134,94 +195,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ClearAll(object? sender, RoutedEventArgs e)
+    private void TemizleButonu(object? sender, RoutedEventArgs e)
     {
         CipherTextBox.Text = "";
         PlainTextBox.Text = "";
         StatusText.Text = "";
-        MailStatusText.Text = "";
-        foreach (var tb in _keyTextBoxes)
-            tb.Text = "";
+        for (int i = 0; i < anahtarKutulari.Count; i++)
+            anahtarKutulari[i].Text = "";
     }
 
-    /// <summary>
-    /// IMAP ile son "CRYPT" konulu e-postanın içeriğini çeker
-    /// ve şifreli metin alanına yapıştırır.
-    /// </summary>
-    private async void FetchMail(object? sender, RoutedEventArgs e)
-    {
-        var email = ImapEmailBox.Text ?? "";
-        var password = ImapPasswordBox.Text ?? "";
-        var host = ImapHostBox.Text ?? "imap.gmail.com";
-        var portText = ImapPortBox.Text ?? "993";
 
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-        {
-            MailStatusText.Text = "⚠ E-posta ve şifre gerekli.";
-            MailStatusText.Foreground = Avalonia.Media.Brushes.Orange;
-            return;
-        }
-
-        if (!int.TryParse(portText, out int port))
-        {
-            MailStatusText.Text = "⚠ IMAP portu geçersiz.";
-            MailStatusText.Foreground = Avalonia.Media.Brushes.Orange;
-            return;
-        }
-
-        MailStatusText.Text = "📥 Bağlanılıyor...";
-        MailStatusText.Foreground = Avalonia.Media.Brushes.Gray;
-        FetchMailBtn.IsEnabled = false;
-
-        try
-        {
-            string? body = null;
-
-            await Task.Run(async () =>
-            {
-                using var client = new ImapClient();
-                await client.ConnectAsync(host, port,
-                    MailKit.Security.SecureSocketOptions.SslOnConnect);
-                await client.AuthenticateAsync(email, password);
-
-                var inbox = client.Inbox;
-                await inbox.OpenAsync(FolderAccess.ReadOnly);
-
-                // "CRYPT" konulu son maili bul
-                var query = SearchQuery.SubjectContains("CRYPT");
-                var uids = await inbox.SearchAsync(query);
-
-                if (uids.Count > 0)
-                {
-                    // En son maili al
-                    var lastUid = uids[uids.Count - 1];
-                    var message = await inbox.GetMessageAsync(lastUid);
-                    body = message.TextBody;
-                }
-
-                await client.DisconnectAsync(true);
-            });
-
-            if (!string.IsNullOrWhiteSpace(body))
-            {
-                CipherTextBox.Text = body.Trim();
-                MailStatusText.Text = "✅ Şifreli metin e-postadan alındı!";
-                MailStatusText.Foreground = Avalonia.Media.Brushes.ForestGreen;
-            }
-            else
-            {
-                MailStatusText.Text = "⚠ 'CRYPT' konulu e-posta bulunamadı.";
-                MailStatusText.Foreground = Avalonia.Media.Brushes.Orange;
-            }
-        }
-        catch (Exception ex)
-        {
-            MailStatusText.Text = $"❌ Mail hatası: {ex.Message}";
-            MailStatusText.Foreground = Avalonia.Media.Brushes.Red;
-        }
-        finally
-        {
-            FetchMailBtn.IsEnabled = true;
-        }
-    }
 }

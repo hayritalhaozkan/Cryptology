@@ -1,81 +1,79 @@
+using System.Globalization;
 using System.Text;
-using Encrypt.App.Helpers;
 
 namespace Encrypt.App.Algorithms;
 
-// ============================================================================
-// KAYDIRMALI SIFRE (CAESAR CIPHER)
-// ============================================================================
-// En basit sifreleme yontemlerinden biridir. Julius Caesar tarafindan kullanilmistir.
-//
-// NASIL CALISIR?
-// Alfabedeki her harfi belirli bir sayi kadar ileri kaydirir.
-// Ornegin kaydirma = 3 ise:
-//   A -> Ç  (A'dan 3 harf ileri)
-//   B -> D  (B'den 3 harf ileri)
-//   Z -> C  (Z'den 3 ileri gidince basa doner: Z -> A -> B -> C)
-//
-// MATEMATIKSEL FORMUL:
-//   E(x) = (x + k) mod 29
-//   x = harfin alfabedeki sirasi (0-28)
-//   k = kaydirma miktari (anahtar)
-//   mod 29 = 29'a bolumunden kalan (alfabe sonu gelince basa doner)
-//
-// ORNEK:
-//   Metin: "MERHABA"    Anahtar: k = 3
-//   M(16) -> (16+3) mod 29 = 19 -> Ö
-//   E(5)  -> (5+3)  mod 29 = 8  -> Ğ
-//   R(20) -> (20+3) mod 29 = 23 -> T
-//   ...
-//   Sonuc: "ÖĞTJÇDÇ"
-// ============================================================================
-public sealed class CaesarCipher : ICipher
+// CAESAR SIFRESI - KAYDIRMALI SIFRE
+// her harfi k kadar ileri kaydirir
+// formul: sifreli = (harf + k) mod 29
+public class CaesarSifrele
 {
-    // combobox'ta gorunecek isim
-    public string Name => "Kaydirmali (Caesar)";
+    // turk alfabesi - 29 harf
+    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
 
-    // kullaniciya gosterilecek ipucu
-    public string KeyHint => "Kaydirma sayisi girin (orn: 3)";
-
-    // tek bir anahtar alani var: kaydirma miktari
-    public string[] KeyLabels => new[] { "Kaydirma (k)" };
-
-    public string Encrypt(string duzMetin, string[] anahtarlar)
+    public static string Sifrele(string metin, int kaydirma)
     {
-        // kullanicinin girdigi kaydirma degerini sayiya cevir
-        // ornegin kullanici "3" yazdiysa kaydirma = 3 olur
-        int kaydirma = int.Parse(anahtarlar[0]);
+        // oncelik metni buyuk harfe cevir ve sadece alfabe harflerini al
+        string temizMetin = MetniTemizle(metin);
 
-        // metni normalize et (buyuk harf yap, bosluk/noktalama kaldir)
-        string normalMetin = TextNormalizer.Normalize(duzMetin);
+        string sonuc = "";
 
-        // sifrelenmis metni olusturmak icin StringBuilder kullaniyoruz
-        var sonuc = new StringBuilder();
-
-        // metnin her harfini tek tek isle
-        for (int i = 0; i < normalMetin.Length; i++)
+        // her harfi tek tek isle
+        for (int i = 0; i < temizMetin.Length; i++)
         {
-            char harf = normalMetin[i]; // simdiki harf
+            char harf = temizMetin[i];
 
-            // harfin alfabedeki sirasini bul (A=0, B=1, ... Z=28)
-            int index = TurkishAlphabet.IndexOf(harf);
-
-            if (index >= 0) // harf alfabede bulunduysa
+            // bu harfin alfabedeki yerini bul
+            int yer = -1;
+            for (int j = 0; j < alfabe.Length; j++)
             {
-                // harfi kaydirma miktari kadar ileri kaydir
-                // CharAt metodu mod 29 islemini otomatik yapar
-                // yani alfabe sonuna gelince basa doner
-                char yeniHarf = TurkishAlphabet.CharAt(index + kaydirma);
-                sonuc.Append(yeniHarf);
+                if (alfabe[j] == harf)
+                {
+                    yer = j;
+                    break;
+                }
             }
-            else
+
+            if (yer >= 0)
             {
-                // alfabede olmayan karakter (normalde buraya gelmez
-                // cunku normalize zaten sadece alfabe harflerini birakir)
-                sonuc.Append(harf);
+                // harfi kaydirma kadar ileri kaydir
+                int yeniYer = (yer + kaydirma) % 29;
+                // negatif olursa duzelt
+                if (yeniYer < 0) yeniYer = yeniYer + 29;
+                sonuc = sonuc + alfabe[yeniYer];
             }
         }
 
-        return sonuc.ToString();
+        return sonuc;
+    }
+
+    // metni buyuk harfe cevir ve sadece turk alfabesindeki harfleri birak
+    static string MetniTemizle(string girdi)
+    {
+        if (girdi == null || girdi.Length == 0)
+            return "";
+
+        // turkce buyuk harfe cevir
+        CultureInfo turkKultur = new CultureInfo("tr-TR");
+        string buyukHarf = girdi.ToUpper(turkKultur);
+
+        string temiz = "";
+        for (int i = 0; i < buyukHarf.Length; i++)
+        {
+            char c = buyukHarf[i];
+            // bu harf alfabede var mi kontrol et
+            bool var = false;
+            for (int j = 0; j < alfabe.Length; j++)
+            {
+                if (alfabe[j] == c)
+                {
+                    var = true;
+                    break;
+                }
+            }
+            if (var)
+                temiz = temiz + c;
+        }
+        return temiz;
     }
 }
