@@ -22,6 +22,7 @@ public partial class MainWindow : Window
         "Permutasyon",
         "Rota",
         "Zigzag",
+        "Hill",
     };
 
     // her algoritma icin anahtar ipucu
@@ -34,6 +35,7 @@ public partial class MainWindow : Window
         "Permutasyon sirasi girin.\nOrn: 3,1,4,2 (blok=4)",
         "Satir ve sutun sayisi girin.\nOrn: 4 ve 5",
         "Ray sayisi girin. Orn: 3",
+        "3x3 matris degerlerini girin (a, b, c, d, e, f, g, h, i).\nDeterminant 29 ile aralarinda asal olmali.",
     };
 
     // her algoritma icin anahtar alan isimleri
@@ -46,6 +48,7 @@ public partial class MainWindow : Window
         new[] { "Permutasyon (virgul ile)" }, // permutation
         new[] { "Satir", "Sutun" },         // route
         new[] { "Ray Sayisi" },             // zigzag
+        new[] { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, // hill
     };
 
     private int seciliAlgoritma = 0;  // hangi algoritma secili
@@ -163,6 +166,19 @@ public partial class MainWindow : Window
             {
                 int raySayisi = int.Parse(anahtarlar[0]);
                 sifreliMetin = ZigzagSifrele.Sifrele(metin, raySayisi);
+            }
+            else if (seciliAlgoritma == 7) // Hill
+            {
+                int m1 = int.Parse(anahtarlar[0]);
+                int m2 = int.Parse(anahtarlar[1]);
+                int m3 = int.Parse(anahtarlar[2]);
+                int m4 = int.Parse(anahtarlar[3]);
+                int m5 = int.Parse(anahtarlar[4]);
+                int m6 = int.Parse(anahtarlar[5]);
+                int m7 = int.Parse(anahtarlar[6]);
+                int m8 = int.Parse(anahtarlar[7]);
+                int m9 = int.Parse(anahtarlar[8]);
+                sifreliMetin = HillSifrele.Sifrele(metin, m1, m2, m3, m4, m5, m6, m7, m8, m9);
             }
 
             CipherTextBox.Text = sifreliMetin;
