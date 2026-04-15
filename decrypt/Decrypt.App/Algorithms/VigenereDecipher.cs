@@ -4,31 +4,18 @@ using System.Text;
 namespace Decrypt.App.Algorithms;
 
 // VIGENERE SIFRE COZME
-// sifreleme her harfe farkli kaydirma EKLIYORDU
-// cozme ayni kaydirmayi CIKARIR
-// formul: cozulmus = (harf - anahtar) mod 29
+// her harften anahtar kelimedeki karsilik gelen harfin alfabedeki sirasi kadar kaydirma cikarir
 public class VigenereCoz
 {
-    // turk alfabesi - 29 harf
-    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
+    // turk alfabesi - 29 harf (kucuk harfler)
+    static string alfabe = "abcçdefgğhıijklmnoöprsştuüvyz";
 
     public static string Coz(string sifreliMetin, string anahtarMetin)
     {
         string temizMetin = MetniTemizle(sifreliMetin);
+        string temizAnahtar = MetniTemizle(anahtarMetin);
 
-        // anahtari virgullerden bol ve sayilara cevir
-        string[] parcalar = anahtarMetin.Split(',');
-        int[] anahtarSayilari = new int[parcalar.Length];
-        int anahtarUzunluk = 0;
-        for (int i = 0; i < parcalar.Length; i++)
-        {
-            string parca = parcalar[i].Trim();
-            if (parca.Length > 0)
-            {
-                anahtarSayilari[anahtarUzunluk] = int.Parse(parca);
-                anahtarUzunluk++;
-            }
-        }
+        if (temizAnahtar.Length == 0) return temizMetin; // Anahtar yoksa aynen dondur
 
         string sonuc = "";
         int anahtarSirasi = 0;
@@ -50,9 +37,20 @@ public class VigenereCoz
 
             if (yer >= 0)
             {
-                // cozme: geri kaydir (sifreleme + yapmisti, cozme - yapar)
-                int kaydirma = anahtarSayilari[anahtarSirasi % anahtarUzunluk];
-                int yeniYer = (yer - kaydirma) % 29;
+                // anahtarin ilgili harfini bul
+                char anahtarHarfi = temizAnahtar[anahtarSirasi % temizAnahtar.Length];
+                int anahtarYer = -1;
+                for (int j = 0; j < alfabe.Length; j++)
+                {
+                    if (alfabe[j] == anahtarHarfi)
+                    {
+                        anahtarYer = j;
+                        break;
+                    }
+                }
+
+                // cozme: geri kaydir
+                int yeniYer = (yer - anahtarYer) % 29;
                 if (yeniYer < 0) yeniYer = yeniYer + 29;
                 sonuc = sonuc + alfabe[yeniYer];
 
@@ -63,18 +61,19 @@ public class VigenereCoz
         return sonuc;
     }
 
+    // metni kucuk harfe cevir ve sadece turk alfabesindeki harfleri birak
     static string MetniTemizle(string girdi)
     {
         if (girdi == null || girdi.Length == 0)
             return "";
 
         CultureInfo turkKultur = new CultureInfo("tr-TR");
-        string buyukHarf = girdi.ToUpper(turkKultur);
+        string kucukHarf = girdi.ToLower(turkKultur);
 
         string temiz = "";
-        for (int i = 0; i < buyukHarf.Length; i++)
+        for (int i = 0; i < kucukHarf.Length; i++)
         {
-            char c = buyukHarf[i];
+            char c = kucukHarf[i];
             bool var = false;
             for (int j = 0; j < alfabe.Length; j++)
             {

@@ -16,7 +16,7 @@ public partial class MainWindow : Window
         "Kaydirmali",
         "Dogrusal",
         "Yer Degistirme",
-        "Sayi Anahtarli",
+        "Vigenere",
         "Permutasyon",
         "Rota",
         "Zigzag",
@@ -29,7 +29,7 @@ public partial class MainWindow : Window
         "Kaydirma sayisi girin (orn: 3)",
         "a ve b degerlerini girin. Orn: a=2, b=5",
         "29 harflik karisik alfabe girin.\nOrn: ÜYZABCÇDEFGĞHIIJKLMNOÖPRSŞTÜV",
-        "Virgul ile ayrilmis sayilar girin.\nOrn: 3,7,1,15,22",
+        "Metin anahtar girin.\nOrn: kayali",
         "Permutasyon sirasi girin.\nOrn: 3,1,4,2 (blok=4)",
         "Satir ve sutun sayisi girin.\nOrn: 4 ve 5",
         "Ray sayisi girin. Orn: 3",
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         new[] { "Kaydirma (k)" },           // caesar
         new[] { "a", "b" },                 // affine
         new[] { "Anahtar Alfabesi (29 harf)" }, // substitution
-        new[] { "Sayisal Anahtar" },        // vigenere
+        new[] { "Anahtar Kelime" },        // vigenere
         new[] { "Permutasyon (virgul ile)" }, // permutation
         new[] { "Satir", "Sutun" },         // route
         new[] { "Ray Sayisi" },             // zigzag

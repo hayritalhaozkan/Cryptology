@@ -3,36 +3,22 @@ using System.Text;
 
 namespace Encrypt.App.Algorithms;
 
-// VIGENERE SIFRESI - SAYI ANAHTARLI SIFRE
-// her harfe farkli bir kaydirma uygular
-// anahtar: virgul ile ayrilmis sayilar, ornegin 3,7,1
-// 1. harfe 3, 2. harfe 7, 3. harfe 1 kaydirma uygulanir
-// anahtar bitince basa doner
+// VIGENERE SIFRESI - METIN ANAHTARLI SIFRE
+// her harfe anahtar kelimedeki karsilik gelen harfin alfabedeki sirasi kadar kaydirma uygular
 public class VigenereSifrele
 {
-    // turk alfabesi - 29 harf
-    static string alfabe = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ";
+    // turk alfabesi - 29 harf (kucuk harfler)
+    static string alfabe = "abcçdefgğhıijklmnoöprsştuüvyz";
 
     public static string Sifrele(string metin, string anahtarMetin)
     {
         string temizMetin = MetniTemizle(metin);
+        string temizAnahtar = MetniTemizle(anahtarMetin);
 
-        // anahtari virgullerden bol ve sayilara cevir
-        string[] parcalar = anahtarMetin.Split(',');
-        int[] anahtarSayilari = new int[parcalar.Length];
-        int anahtarUzunluk = 0;
-        for (int i = 0; i < parcalar.Length; i++)
-        {
-            string parca = parcalar[i].Trim();
-            if (parca.Length > 0)
-            {
-                anahtarSayilari[anahtarUzunluk] = int.Parse(parca);
-                anahtarUzunluk++;
-            }
-        }
+        if (temizAnahtar.Length == 0) return temizMetin; // Anahtar yoksa aynen dondur
 
         string sonuc = "";
-        int anahtarSirasi = 0; // anahtarin hangi elemanindayiz
+        int anahtarSirasi = 0;
 
         for (int i = 0; i < temizMetin.Length; i++)
         {
@@ -51,12 +37,20 @@ public class VigenereSifrele
 
             if (yer >= 0)
             {
-                // simdiki anahtar degerini al
-                int kaydirma = anahtarSayilari[anahtarSirasi % anahtarUzunluk];
+                // anahtarin ilgili harfini bul
+                char anahtarHarfi = temizAnahtar[anahtarSirasi % temizAnahtar.Length];
+                int anahtarYer = -1;
+                for (int j = 0; j < alfabe.Length; j++)
+                {
+                    if (alfabe[j] == anahtarHarfi)
+                    {
+                        anahtarYer = j;
+                        break;
+                    }
+                }
 
                 // harfi kaydir
-                int yeniYer = (yer + kaydirma) % 29;
-                if (yeniYer < 0) yeniYer = yeniYer + 29;
+                int yeniYer = (yer + anahtarYer) % 29;
                 sonuc = sonuc + alfabe[yeniYer];
 
                 anahtarSirasi++;
@@ -66,19 +60,19 @@ public class VigenereSifrele
         return sonuc;
     }
 
-    // metni buyuk harfe cevir ve sadece turk alfabesindeki harfleri birak
+    // metni kucuk harfe cevir ve sadece turk alfabesindeki harfleri birak
     static string MetniTemizle(string girdi)
     {
         if (girdi == null || girdi.Length == 0)
             return "";
 
         CultureInfo turkKultur = new CultureInfo("tr-TR");
-        string buyukHarf = girdi.ToUpper(turkKultur);
+        string kucukHarf = girdi.ToLower(turkKultur);
 
         string temiz = "";
-        for (int i = 0; i < buyukHarf.Length; i++)
+        for (int i = 0; i < kucukHarf.Length; i++)
         {
-            char c = buyukHarf[i];
+            char c = kucukHarf[i];
             bool var = false;
             for (int j = 0; j < alfabe.Length; j++)
             {
