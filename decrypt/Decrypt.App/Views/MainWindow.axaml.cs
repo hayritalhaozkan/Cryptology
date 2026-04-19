@@ -10,7 +10,6 @@ namespace Decrypt.App.Views;
 
 public partial class MainWindow : Window
 {
-    // algoritma isimleri listesi
     private readonly string[] algoritmaIsimleri = new string[]
     {
         "Kaydirmali",
@@ -21,9 +20,9 @@ public partial class MainWindow : Window
         "Rota",
         "Zigzag",
         "Hill",
+        "4 Kare (Matris)",
     };
 
-    // her algoritma icin anahtar ipucu
     private readonly string[] anahtarIpuclari = new string[]
     {
         "Kaydirma sayisi girin (orn: 3)",
@@ -34,9 +33,9 @@ public partial class MainWindow : Window
         "Satir ve sutun sayisi girin.\nOrn: 4 ve 5",
         "Ray sayisi girin. Orn: 3",
         "3x3 matris degerlerini girin (a, b, c, d, e, f, g, h, i).\nDeterminant 29 ile aralarinda asal olmali.",
+        "Matris 2 ve 3 için 30 harflik karışık matris alfabesini girin.\n(A-Z + X harflerinden oluşan 30 karakter)",
     };
 
-    // her algoritma icin anahtar alan isimleri
     private readonly string[][] anahtarAlanlari = new string[][]
     {
         new[] { "Kaydirma (k)" },           // caesar
@@ -47,6 +46,7 @@ public partial class MainWindow : Window
         new[] { "Satir", "Sutun" },         // route
         new[] { "Ray Sayisi" },             // zigzag
         new[] { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, // hill
+        new[] { "Matris 2 Alfabesi (30 harf)", "Matris 3 Alfabesi (30 harf)" }, // four-square
     };
 
     private int seciliAlgoritma = 0;  // hangi algoritma secili
@@ -174,6 +174,10 @@ public partial class MainWindow : Window
                 int m8 = int.Parse(anahtarlar[7]);
                 int m9 = int.Parse(anahtarlar[8]);
                 cozulmusMetin = HillCoz.Coz(sifreliMetin, m1, m2, m3, m4, m5, m6, m7, m8, m9);
+            }
+            else if (seciliAlgoritma == 8) // Four-Square
+            {
+                cozulmusMetin = FourSquareCoz.Coz(sifreliMetin, anahtarlar[0], anahtarlar[1]);
             }
 
             PlainTextBox.Text = cozulmusMetin;
