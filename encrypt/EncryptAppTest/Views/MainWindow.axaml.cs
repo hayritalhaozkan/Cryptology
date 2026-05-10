@@ -23,7 +23,6 @@ public partial class MainWindow : Window
         "Zigzag",
         "Hill",
         "4 Kare (Matris)",
-        "RSA",
     };
 
     private readonly string[] anahtarIpuclari = new string[]
@@ -37,7 +36,6 @@ public partial class MainWindow : Window
         "Ray sayisi girin. Orn: 3",
         "3x3 matris degerlerini girin (a, b, c, d, e, f, g, h, i).\nDeterminant 29 ile aralarinda asal olmali.",
         "Matris 2 ve 3 için 30 harflik karışık matris alfabesini girin.\n(A-Z + X harflerinden oluşan 30 karakter)",
-        "p, q asal sayıları ve e açık anahtar değerini girin. Orn: 61, 53, 17",
     };
 
     private readonly string[][] anahtarAlanlari = new string[][]
@@ -51,7 +49,6 @@ public partial class MainWindow : Window
         new[] { "Ray Sayisi" },             // zigzag
         new[] { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, // hill
         new[] { "Matris 2 Alfabesi (30 harf)", "Matris 3 Alfabesi (30 harf)" }, // four-square
-        new[] { "p (asal)", "q (asal)", "e (açık anahtar)" }, // rsa
     };
 
     private int seciliAlgoritma = 0;  // hangi algoritma secili
@@ -186,13 +183,6 @@ public partial class MainWindow : Window
             else if (seciliAlgoritma == 8) // Four-Square
             {
                 sifreliMetin = FourSquareSifrele.Sifrele(metin, anahtarlar[0], anahtarlar[1]);
-            }
-            else if (seciliAlgoritma == 9) // RSA
-            {
-                long p = long.Parse(anahtarlar[0]);
-                long q = long.Parse(anahtarlar[1]);
-                long e_val = long.Parse(anahtarlar[2]);
-                sifreliMetin = RsaSifrele.Sifrele(metin, p, q, e_val);
             }
 
             CipherTextBox.Text = sifreliMetin;
